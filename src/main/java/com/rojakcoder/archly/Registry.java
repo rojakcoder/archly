@@ -86,6 +86,13 @@ class Registry {
 	}
 
 	/**
+	 * Empties the registry.
+	 */
+	void clear() {
+		registry.clear();
+	}
+
+	/**
 	 * Checks if the entry is stored in the registry.
 	 *
 	 * @param entry The entry to check.

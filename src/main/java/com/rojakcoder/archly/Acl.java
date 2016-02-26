@@ -157,6 +157,15 @@ public class Acl {
 	}
 
 	/**
+	 * Resets all the registries to an empty state.
+	 */
+	public void clear() {
+		perms.clear();
+		resources.clear();
+		roles.clear();
+	}
+
+	/**
 	 * Denies permission on all resources to the role.
 	 *
 	 * @param role The role to deny the permissions to.
@@ -246,9 +255,11 @@ public class Acl {
 		//check role-resource
 		for (String aro: rolePath) {
 			for (String aco: resPath) {
-				if (perms.isAllowed(aro, aco)) {
-					return true;
-				}
+				Boolean grant = perms.isAllowed(aro, aco);
+
+				if (grant != null) {
+					return grant;
+				} // else null, continue
 			}
 		}
 
@@ -256,7 +267,8 @@ public class Acl {
 	}
 
 	/**
-	 * Determines if the role has access to the resource.
+	 * Determines if the role has access to the resource for the specific
+	 * action.
 	 *
 	 * @param role The access request object.
 	 * @param resource The access control object.
@@ -276,9 +288,11 @@ public class Acl {
 		//check role-resource
 		for (String aro: rolePath) {
 			for (String aco: resPath) {
-				if (perms.isAllowed(aro, aco, actionType)) {
-					return true;
-				}
+				Boolean grant = perms.isAllowed(aro, aco, actionType);
+
+				if (grant != null) {
+					return grant;
+				} //else null, continue
 			}
 		}
 
@@ -296,12 +310,6 @@ public class Acl {
 	public boolean isDenied(AclEntry role, AclEntry resource) {
 		//get the traversal path for role
 		List<String> rolePath = roles.traverseRoot(role);
-//
-//		System.out.printf(" ** rolePath-");
-//		for (String aro: rolePath) {
-//			System.out.printf("> %s ", aro);
-//		}
-//		System.out.println();
 
 		//get the traversal path for resource
 		List<String> resPath = resources.traverseRoot(resource);
@@ -309,17 +317,27 @@ public class Acl {
 		//check role-resource
 		for (String aro: rolePath) {
 			for (String aco: resPath) {
-//				System.out.printf(" > %s(aro) %s(aco) => %s\n", aro, aco,
-//						perms.isDenied(aro, aco));
-				if (perms.isDenied(aro, aco)) {
-					return true;
-				}
+				Boolean grant = perms.isDenied(aro, aco);
+
+				if (grant != null) {
+					return grant;
+				} //else null, continue
 			}
 		}
 
 		return false;
 	}
 
+	/**
+	 * Determines if the role is denied access to the resource for the specific
+	 * action.
+	 *
+	 * @param role The access request object.
+	 * @param resource The access control object.
+	 * @param action The action type to check the access for.
+	 * @return Returns true if the role is denied access on the resource, false
+	 * otherwise.
+	 */
 	public boolean isDenied(AclEntry role, AclEntry resource, String action) {
 		//get the traversal path for role
 		List<String> rolePath = roles.traverseRoot(role);
@@ -332,9 +350,11 @@ public class Acl {
 		//check role-resource
 		for (String aro: rolePath) {
 			for (String aco: resPath) {
-				if (perms.isDenied(aro, aco, actionType)) {
-					return true;
-				}
+				Boolean grant = perms.isDenied(aro, aco, actionType);
+
+				if (grant != null) {
+					return grant;
+				} //else null, continue
 			}
 		}
 

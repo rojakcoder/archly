@@ -1,6 +1,6 @@
 package com.rojakcoder.archly;
 
-import org.junit.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.rojakcoder.archly.exceptions.DuplicateEntryException;
@@ -20,11 +20,21 @@ public class AclTest {
 		testDeny();
 		testRemove();
 		testHierarchy();
+	}
 
+	@Test(priority = 49)
+	public void testCoverage() {
 		AclEntry root = new RootEntry();
 		//test coverage
 		Assert.assertEquals(root.getEntryDescription(), "ROOT");
 		Assert.assertNull(root.retrieveEntry(null));
+
+		Permission p = Permission.getSingleton();
+		p.permissions.remove("*::*");
+		Assert.assertFalse(acl.isAllowed(null, null));
+		Assert.assertFalse(acl.isAllowed(null, null, "ALL"));
+		Assert.assertFalse(acl.isDenied(null, null));
+		Assert.assertFalse(acl.isDenied(null, null, "ALL"));
 	}
 
 	public void testResource() {
@@ -238,6 +248,7 @@ public class AclTest {
 		acl.denyAllRole(res1c);
 
 		acl.allow(rol1, res1);
+
 		//1-1
 		Assert.assertTrue(acl.isAllowed(rol1, res1));
 		Assert.assertTrue(acl.isAllowed(rol1, res1a));
@@ -245,8 +256,9 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol1, res1a2));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
-		Assert.assertTrue(acl.isDenied(rol1, res1c));
-		Assert.assertTrue(acl.isDenied(rol1, res1c1));
+		// rol1 allowed to res1 - overrides * deny res1c
+		Assert.assertFalse(acl.isDenied(rol1, res1c));
+		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
 		//1-3
@@ -259,7 +271,8 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol2, res1b));
 		Assert.assertTrue(acl.isAllowed(rol2, res1b1));
 		//2-2
-		Assert.assertTrue(acl.isDenied(rol2, res2));
+		//false because ARO-2::ACO-2 was added with CREATE:true before
+		Assert.assertFalse(acl.isDenied(rol2, res2));
 		//2-3
 		Assert.assertTrue(acl.isDenied(rol2, res3));
 		//3-1
@@ -291,8 +304,9 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol1, res1a2));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
-		Assert.assertTrue(acl.isDenied(rol1, res1c));
-		Assert.assertTrue(acl.isDenied(rol1, res1c1));
+		//false because ARO-1::ACO-1 overrides *::ACO-1-C
+		Assert.assertFalse(acl.isDenied(rol1, res1c));
+		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
 		//1-3
@@ -305,7 +319,8 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol2, res1b));
 		Assert.assertTrue(acl.isAllowed(rol2, res1b1));
 		//2-2
-		Assert.assertTrue(acl.isDenied(rol2, res2));
+		//false because ARO-2::ACO-2 was added with CREATE:true before
+		Assert.assertFalse(acl.isDenied(rol2, res2));
 		//2-3
 		Assert.assertTrue(acl.isDenied(rol2, res3));
 		//3-1
@@ -328,8 +343,9 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol1, res1a2));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
-		Assert.assertTrue(acl.isDenied(rol1, res1c));
-		Assert.assertTrue(acl.isDenied(rol1, res1c1));
+		//false because ARO-1::ACO-1 overrides *::ACO-1-C
+		Assert.assertFalse(acl.isDenied(rol1, res1c));
+		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
 		//1-3
@@ -342,7 +358,8 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol2, res1b));
 		Assert.assertTrue(acl.isAllowed(rol2, res1b1));
 		//2-2
-		Assert.assertTrue(acl.isDenied(rol2, res2));
+		//false because ARO-2::ACO-2 was added with CREATE:true before
+		Assert.assertFalse(acl.isDenied(rol2, res2));
 		//2-3
 		Assert.assertTrue(acl.isDenied(rol2, res3));
 		//3-1
@@ -366,8 +383,9 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol1, res1a2));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
-		Assert.assertTrue(acl.isDenied(rol1, res1c));
-		Assert.assertTrue(acl.isDenied(rol1, res1c1));
+		//false because ARO-1::ACO-1 overrides *::ACO-1-C
+		Assert.assertFalse(acl.isDenied(rol1, res1c));
+		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
 		//1-3
@@ -380,7 +398,8 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol2, res1b));
 		Assert.assertTrue(acl.isDenied(rol2, res1b1));
 		//2-2
-		Assert.assertTrue(acl.isDenied(rol2, res2));
+		//false because ARO-2::ACO-2 was added with CREATE:true before
+		Assert.assertFalse(acl.isDenied(rol2, res2));
 		//2-3
 		Assert.assertTrue(acl.isDenied(rol2, res3));
 		//3-1
@@ -404,8 +423,9 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol1, res1a2));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
-		Assert.assertTrue(acl.isDenied(rol1, res1c));
-		Assert.assertTrue(acl.isDenied(rol1, res1c1));
+		//false because ARO-1::ACO-1 overrides *::ACO-1-C
+		Assert.assertFalse(acl.isDenied(rol1, res1c));
+		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
 		//1-3
@@ -418,7 +438,8 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol2, res1b));
 		Assert.assertTrue(acl.isDenied(rol2, res1b1));
 		//2-2
-		Assert.assertTrue(acl.isDenied(rol2, res2));
+		//false because ARO-2::ACO-2 was added with CREATE:true before
+		Assert.assertFalse(acl.isDenied(rol2, res2));
 		//2-3
 		Assert.assertTrue(acl.isDenied(rol2, res3));
 		//3-1
@@ -447,6 +468,108 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol4, res4));
 		acl.allow(rol4, res4);
 		Assert.assertTrue(acl.isAllowed(rol4, res4));
+	}
+
+	@Test(priority = 41)
+	//following the example from http://book.cakephp.org/2.0/en/core-libraries/components/access-control-lists.html
+	public void testCakeExample() {
+		Acl a = Acl.getInstance();
+		a.clear();
+
+		Rol warriors = new Rol("Warriors");
+		Rol aragorn = new Rol("Aragon");
+		Rol legolas = new Rol("Legolas");
+		Rol gimli = new Rol("Gimli");
+		Rol wizards = new Rol("Wizards");
+		Rol gandalf = new Rol("Gandalf");
+		Rol hobbits = new Rol("Hobbits");
+		Rol frodo = new Rol("Frodo");
+		Rol bilbo = new Rol("Bilbo");
+		Rol merry = new Rol("Merry");
+		Rol pippin = new Rol("Pippin");
+		Rol visitors = new Rol("visitors");
+		Rol gollum = new Rol("Gollum");
+
+		a.addRole(warriors);
+		a.addRole(wizards);
+		a.addRole(hobbits);
+		a.addRole(visitors);
+
+		a.addRole(gimli, warriors);
+		a.addRole(legolas, warriors);
+		a.addRole(aragorn, warriors);
+
+		a.addRole(gandalf, wizards);
+
+		a.addRole(frodo, hobbits);
+		a.addRole(bilbo, hobbits);
+		a.addRole(merry, hobbits);
+		a.addRole(pippin, hobbits);
+
+		a.addRole(gollum, visitors);
+
+		Res weapons = new Res("Weapons");
+		Res ring = new Res("The One Ring");
+		Res pork = new Res("Salted Pork");
+		Res diplomacy = new Res("Diplomacy");
+		Res ale = new Res("Ale");
+
+		a.addResource(weapons);
+		a.addResource(ring);
+		a.addResource(pork);
+		a.addResource(diplomacy);
+		a.addResource(ale);
+
+		//deny all
+		a.makeDefaultDeny();
+
+		//allow warriors
+		a.allow(warriors, weapons);
+		a.allow(warriors, ale);
+		a.allow(warriors, pork);
+		a.allow(aragorn, diplomacy);
+		a.deny(gimli, weapons, "DELETE");
+		a.deny(legolas, weapons, "DELETE");
+
+		//allow wizards
+		a.allow(wizards, ale);
+		a.allow(wizards, pork);
+		a.allow(wizards, diplomacy);
+
+		//allow hobbits
+		a.allow(hobbits, ale);
+		a.allow(frodo, ring);
+		a.deny(merry, ale);
+		a.allow(pippin, diplomacy);
+
+		//allow visitors
+		a.allow(visitors, pork);
+
+		printReg();
+
+		//Pippin can access ale
+		Assert.assertTrue(a.isAllowed(pippin, ale));
+		//Merry cannot
+		Assert.assertTrue(a.isDenied(merry, ale));
+
+		//aragorn
+		Assert.assertTrue(a.isAllowed(aragorn, weapons));
+		Assert.assertTrue(a.isAllowed(aragorn, weapons, "CREATE"));
+		Assert.assertTrue(a.isAllowed(aragorn, weapons, "READ"));
+		Assert.assertTrue(a.isAllowed(aragorn, weapons, "UPDATE"));
+		Assert.assertTrue(a.isAllowed(aragorn, weapons, "DELETE"));
+		//legolas
+		Assert.assertFalse(a.isAllowed(legolas, weapons));
+		Assert.assertTrue(a.isAllowed(legolas, weapons, "CREATE"));
+		Assert.assertTrue(a.isAllowed(legolas, weapons, "READ"));
+		Assert.assertTrue(a.isAllowed(legolas, weapons, "UPDATE"));
+		Assert.assertFalse(a.isAllowed(legolas, weapons, "DELETE"));
+		//gimli
+		Assert.assertFalse(a.isAllowed(gimli, weapons));
+		Assert.assertTrue(a.isAllowed(gimli, weapons, "CREATE"));
+		Assert.assertTrue(a.isAllowed(gimli, weapons, "READ"));
+		Assert.assertTrue(a.isAllowed(gimli, weapons, "UPDATE"));
+		Assert.assertFalse(a.isAllowed(gimli, weapons, "DELETE"));
 	}
 
 	private void printReg() {

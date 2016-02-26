@@ -26,23 +26,24 @@ public class PermissionTest {
 		Pres nullres = null;
 		Prol nullrol = null;
 
-		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, res1));
+		//null because permissions not specified
+		Assert.assertNull(p.isAllowed(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1));
 
-		Assert.assertFalse(p.isAllowed(rol1, null));
-		Assert.assertFalse(p.isDenied(rol1, null));
+		Assert.assertNull(p.isAllowed(rol1, null));
+		Assert.assertNull(p.isDenied(rol1, null));
 
-		Assert.assertFalse(p.isAllowed(null, res1));
-		Assert.assertFalse(p.isDenied(null, res1));
+		Assert.assertNull(p.isAllowed(null, res1));
+		Assert.assertNull(p.isDenied(null, res1));
 
 		Assert.assertFalse(p.isAllowed(nullres, nullrol));
 		Assert.assertTrue(p.isDenied(nullres, nullrol)); //default deny
 
 		p.makeDefaultAllow();
 
-		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isAllowed(rol1, null));
-		Assert.assertFalse(p.isAllowed(null, res1));
+		Assert.assertNull(p.isAllowed(rol1, res1));
+		Assert.assertNull(p.isAllowed(rol1, null));
+		Assert.assertNull(p.isAllowed(null, res1));
 		Assert.assertTrue(p.isAllowed(nullres, nullrol));
 		Assert.assertTrue(p
 				.isAllowed(nullres, nullrol, Permission.Types.CREATE));
@@ -50,9 +51,9 @@ public class PermissionTest {
 
 		p.makeDefaultDeny();
 
-		Assert.assertFalse(p.isDenied(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, null));
-		Assert.assertFalse(p.isDenied(null, res1));
+		Assert.assertNull(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, null));
+		Assert.assertNull(p.isDenied(null, res1));
 		Assert.assertTrue(p.isDenied(nullrol, nullres, Permission.Types.CREATE));
 		Assert.assertFalse(p.isAllowed(nullres, nullrol));
 
@@ -62,8 +63,8 @@ public class PermissionTest {
 		Pres res1 = new Pres("RES-1");
 		Prol rol1 = new Prol("ROLE-1");
 
-		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isAllowed(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1));
 
 		p.allow(rol1, res1);
 		Assert.assertTrue(p.isAllowed(rol1, res1));
@@ -71,6 +72,7 @@ public class PermissionTest {
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.READ));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.DELETE));
+		//false because explicit allow
 		Assert.assertFalse(p.isDenied(rol1, res1));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
@@ -103,41 +105,45 @@ public class PermissionTest {
 		Assert.assertTrue(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.remove(rol1, res1);
-		Assert.assertFalse(p.isAllowed(rol1, res1)); //is now true
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.DELETE));
-		Assert.assertFalse(p.isDenied(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.UPDATE));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
+		Assert.assertNull(p.isAllowed(rol1, res1)); //is now NULL
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.DELETE));
+		Assert.assertNull(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.deny(rol1, res1, Permission.Types.DELETE);
+		//ALL is removed, DELETE is false, others are NULL
 		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.DELETE));
-		Assert.assertFalse(p.isDenied(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.UPDATE));
+		//no explicit deny on ALL, explicity deny on DELETE
+		Assert.assertNull(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertTrue(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.allow(rol1, res1, Permission.Types.CREATE);
 		p.allow(rol1, res1, Permission.Types.READ);
 		p.allow(rol1, res1, Permission.Types.DELETE);
-		Assert.assertFalse(p.isAllowed(rol1, res1));
+		//no explicit deny so ALL is NULL
+		Assert.assertNull(p.isAllowed(rol1, res1));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.CREATE));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.DELETE));
+		//no expclit deny on ALL, explicit allow on some
 		Assert.assertFalse(p.isDenied(rol1, res1));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		//equivalent of ALL allow
@@ -159,8 +165,8 @@ public class PermissionTest {
 		Pres res1 = new Pres("RES-A");
 		Prol rol1 = new Prol("ROLE-A");
 
-		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isAllowed(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1));
 
 		p.allow(rol1, res1);
 		Assert.assertTrue(p.isAllowed(rol1, res1));
@@ -188,6 +194,7 @@ public class PermissionTest {
 
 		p.allow(rol1, res1, Permission.Types.UPDATE);
 		p.allow(rol1, res1, Permission.Types.DELETE);
+		//false because there is an explicit deny on ALL
 		Assert.assertFalse(p.isAllowed(rol1, res1));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
@@ -200,6 +207,7 @@ public class PermissionTest {
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.remove(rol1, res1, Permission.Types.UPDATE);
+		//false because ther eis an explicit deny on ALL
 		Assert.assertFalse(p.isAllowed(rol1, res1));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
@@ -212,41 +220,45 @@ public class PermissionTest {
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.remove(rol1, res1);
-		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.DELETE));
-		Assert.assertFalse(p.isDenied(rol1, res1)); //is now true
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.UPDATE));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
+		Assert.assertNull(p.isAllowed(rol1, res1));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.DELETE));
+		//now NULL since removed
+		Assert.assertNull(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.allow(rol1, res1, Permission.Types.DELETE);
-		Assert.assertFalse(p.isAllowed(rol1, res1));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
+		//no explicit deny so ALL is NULL
+		Assert.assertNull(p.isAllowed(rol1, res1));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.DELETE));
+		//explicit allow on DELETE so false
 		Assert.assertFalse(p.isDenied(rol1, res1));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.CREATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.READ));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.deny(rol1, res1, Permission.Types.CREATE);
 		p.deny(rol1, res1, Permission.Types.READ);
 		p.deny(rol1, res1, Permission.Types.DELETE);
+		//false because of explicit deny
 		Assert.assertFalse(p.isAllowed(rol1, res1));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.DELETE));
-		Assert.assertFalse(p.isDenied(rol1, res1));
+		Assert.assertNull(p.isDenied(rol1, res1));
 		Assert.assertTrue(p.isDenied(rol1, res1, Permission.Types.CREATE));
 		Assert.assertTrue(p.isDenied(rol1, res1, Permission.Types.READ));
-		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.UPDATE));
+		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertTrue(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		//equivalent of ALL deny
@@ -269,7 +281,6 @@ public class PermissionTest {
 		Pres resna = new Pres("RES-NA");
 		Prol rolna = new Prol("ROLE-NA");
 
-		System.out.println(p.toString());
 		//non-existing role and resource
 		boolean thrown = false;
 		try {

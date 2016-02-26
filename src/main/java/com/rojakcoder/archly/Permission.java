@@ -114,6 +114,13 @@ class Permission {
 	}
 
 	/**
+	 * Removes all permissions.
+	 */
+	void clear() {
+		permissions.clear();
+	}
+
+	/**
 	 * Denies permission on resource to role.
 	 * <p>
 	 * Overrides any existing permissions on all actions.
@@ -168,10 +175,11 @@ class Permission {
 	 *
 	 * @param role The access request object.
 	 * @param resource The access control object.
-	 * @return Returns true only if the role has access to all actions on the
-	 * resource. Returns false otherwise.
+	 * @return Returns true only if the role has been explicitly given access to
+	 * all actions on the resource. Returns false if the role has been
+	 * explicitly denied access. Returns null otherwise.
 	 */
-	boolean isAllowed(AclEntry role, AclEntry resource) {
+	Boolean isAllowed(AclEntry role, AclEntry resource) {
 		String aroId = role == null ? null : role.getId();
 		String acoId = resource == null ? null : resource.getId();
 
@@ -183,15 +191,16 @@ class Permission {
 	 *
 	 * @param role The access request object.
 	 * @param resource The access control object.
-	 * @return Returns true only if the role has access to all actions on the
-	 * resource. Returns false otherwise.
+	 * @return Returns true only if the role has been explicitly given access to
+	 * all actions on the resource. Returns false if the role has been
+	 * explicitly denied access. Returns null otherwise.
 	 */
-	boolean isAllowed(String role, String resource) {
+	Boolean isAllowed(String role, String resource) {
 		String key = makeKey(role, resource);
 		int allSet = 0;
 
 		if (!has(key)) {
-			return false;
+			return null;
 		}
 
 		Map<String, Boolean> perm = permissions.get(key);
@@ -200,16 +209,39 @@ class Permission {
 			if (!entry.getValue()) {
 				return false;
 			}
-			allSet++;
+			if (!entry.getKey().equals(Types.ALL.toString())) {
+				allSet++;
+			}
 		}
 		if (perm.containsKey(Types.ALL.toString())) {
 			return true; //true because ALL = false would be caught in the loop
 		}
 
-		return allSet == 4;
+		if (allSet == 4) {
+			return true;
+		}
+
+		return null;
 	}
 
-	boolean isAllowed(AclEntry role, AclEntry resource, Types action) {
+	/**
+	 * Determines if the role has access on the resource for the specific
+	 * action.
+	 * <p>
+	 * The permission on the specific action is evaluated to see if it has been
+	 * specified. If not specified, the permission on the <code>ALL</code>
+	 * permission is evaluated. If both are not specified, <code>null</code> is
+	 * returned.
+	 * </p>
+	 *
+	 * @param role The access request object.
+	 * @param resource The access control object.
+	 * @param action The access action.
+	 * @return Returns true if the role has access to the specified
+	 * action on the resource. Returns false if the role is denied
+	 * access. Returns null if no permission is specified.
+	 */
+	Boolean isAllowed(AclEntry role, AclEntry resource, Types action) {
 		String aroId = role == null ? null : role.getId();
 		String acoId = resource == null ? null : resource.getId();
 
@@ -217,28 +249,34 @@ class Permission {
 	}
 
 	/**
-	 * Determines if the role has access on the resource for the specified
+	 * Determines if the role has access on the resource for the specific
 	 * action.
+	 * <p>
+	 * The permission on the specific action is evaluated to see if it has been
+	 * specified. If not specified, the permission on the <code>ALL</code>
+	 * permission is evaluated. If both are not specified, <code>null</code> is
+	 * returned.
+	 * </p>
 	 *
 	 * @param role The access request object.
 	 * @param resource The access control object.
 	 * @param action The access action.
-	 * @return Returns true if the role has access to the specified action on
-	 * the resource. If the ALL permission has been granted on the resource for
-	 * the role, this returns true as well. Returns false otherwise.
+	 * @return Returns true if the role has access to the specified
+	 * action on the resource. Returns false if the role is denied
+	 * access. Returns null if no permission is specified.
 	 */
-	boolean isAllowed(String role, String resource, Types action) {
+	Boolean isAllowed(String role, String resource, Types action) {
 		String key = makeKey(role, resource);
 
 		if (!has(key)) {
-			return false;
+			return null;
 		}
 
 		Map<String, Boolean> perm = permissions.get(key);
 		if (!perm.containsKey(action.toString())) {
 			//if specific action is not present, check for ALL
 			if (!perm.containsKey(Types.ALL.toString())) {
-				return false;
+				return null;
 			}
 
 			return perm.get(Types.ALL.toString());
@@ -253,9 +291,10 @@ class Permission {
 	 * @param role The access request object.
 	 * @param resource The access control object.
 	 * @return Returns true only if the role has been explicitly denied access
-	 * to all actions on the resource. Returns false otherwise.
+	 * to all actions on the resource. Returns false if the role has been
+	 * explicitly granted access. Returns null otherwise.
 	 */
-	boolean isDenied(AclEntry role, AclEntry resource) {
+	Boolean isDenied(AclEntry role, AclEntry resource) {
 		String aro = role == null ? null : role.getId();
 		String aco = resource == null ? null : resource.getId();
 
@@ -268,14 +307,15 @@ class Permission {
 	 * @param role The ID of the access request object.
 	 * @param resource The ID of the access control object.
 	 * @return Returns true only if the role has been explicitly denied access
-	 * to all actions on the resource. Returns false otherwise.
+	 * to all actions on the resource. Returns false if the role has been
+	 * explicitly granted access. Returns null otherwise.
 	 */
-	boolean isDenied(String role, String resource) {
+	Boolean isDenied(String role, String resource) {
 		String key = makeKey(role, resource);
 		int allSet = 0;
 
 		if (!has(key)) {
-			return false;
+			return null;
 		}
 
 		Map<String, Boolean> perm = permissions.get(key);
@@ -284,16 +324,39 @@ class Permission {
 			if (entry.getValue()) {
 				return false;
 			}
-			allSet++;
+			if (!entry.getKey().equals(Types.ALL.toString())) {
+				allSet++;
+			}
 		}
 		if (perm.containsKey(Types.ALL.toString())) {
 			return true; //true because ALL = true would be caught in the loop
 		}
 
-		return allSet == 4;
+		if (allSet == 4) {
+			return true;
+		}
+
+		return null;
 	}
 
-	boolean isDenied(AclEntry role, AclEntry resource, Types action) {
+	/**
+	 * Determines if the role is denied access on the resource for the specific
+	 * action.
+	 * <p>
+	 * The permission on the specific action is evaluated to see if it has been
+	 * specified. If not specified, the permission on the <code>ALL</code>
+	 * permission is evaluated. If both are not specified, <code>null</code> is
+	 * returned.
+	 * </p>
+	 *
+	 * @param role The access request object.
+	 * @param resource The access control object.
+	 * @param action The access action.
+	 * @return Returns true if the role is denied access to the specified
+	 * action on the resource. Returns false if the role has
+	 * access. Returns null if no permission is specified.
+	 */
+	Boolean isDenied(AclEntry role, AclEntry resource, Types action) {
 		String aroId = role == null ? null : role.getId();
 		String acoId = resource == null ? null : resource.getId();
 
@@ -301,29 +364,34 @@ class Permission {
 	}
 
 	/**
-	 * Determines if the role is denied access on the resource for the specified
+	 * Determines if the role is denied access on the resource for the specific
 	 * action.
+	 * <p>
+	 * The permission on the specific action is evaluated to see if it has been
+	 * specified. If not specified, the permission on the <code>ALL</code>
+	 * permission is evaluated. If both are not specified, <code>null</code> is
+	 * returned.
+	 * </p>
 	 *
 	 * @param role The access request object.
 	 * @param resource The access control object.
 	 * @param action The access action.
-	 * @return Returns true if the role has been explicitly denied access to the
-	 * specified action for the resource. If the ALL permission has been denied
-	 * on the resource for the role, this returns true as well. Returns false
-	 * otherwise.
+	 * @return Returns true if the role is denied access to the specified
+	 * action on the resource. Returns false if the role has
+	 * access. Returns null if no permission is specified.
 	 */
-	boolean isDenied(String role, String resource, Types action) {
+	Boolean isDenied(String role, String resource, Types action) {
 		String key = makeKey(role, resource);
 
 		if (!has(key)) {
-			return false;
+			return null;
 		}
 
 		Map<String, Boolean> perm = permissions.get(key);
 		if (!perm.containsKey(action.toString())) {
 			//if specific action is not present, check for ALL
 			if (!perm.containsKey(Types.ALL.toString())) {
-				return false;
+				return null;
 			}
 
 			return !perm.get(Types.ALL.toString());
