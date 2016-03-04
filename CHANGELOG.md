@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.0 - 2016-03-04
+
+### Added
+- Added methods for initializing the ACL and registries.
+- Also added a corresponding exception for the operation.
+
 ## 0.1.0 - 2016-02-26
 
 ### Added

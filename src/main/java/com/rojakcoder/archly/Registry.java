@@ -113,6 +113,15 @@ class Registry {
 	}
 
 	/**
+	 * Re-creates the registry with a new hierarchy.
+	 *
+	 * @param map The map containing the new hierarchy.
+	 */
+	void importRegistry(Map<String, String> map) {
+		registry = new ConcurrentHashMap<String, String>(map);
+	}
+
+	/**
 	 * Creates a traversal path from the entry to the root.
 	 *
 	 * @param entry The entry to start traversing from.

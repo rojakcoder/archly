@@ -1,14 +1,18 @@
 package com.rojakcoder.archly;
 
 import java.util.List;
+import java.util.Map;
 
 import com.rojakcoder.archly.exceptions.DuplicateEntryException;
 import com.rojakcoder.archly.exceptions.EntryNotFoundException;
+import com.rojakcoder.archly.exceptions.NonEmptyException;
 
 /**
  * The public class for managing permissions and roles.
  */
 public class Acl {
+	private static final String NON_EMPTY = "%s registry is not empty.";
+
 	private static Acl instance = null;
 
 	private Permission perms;
@@ -235,6 +239,30 @@ public class Acl {
 			//do nothing
 		}
 		perms.deny(role, resource, actionType);
+	}
+
+	/**
+	 * Imports a new hierarchy of resources.
+	 *
+	 * @param roles The map containing the new hierarchy.
+	 */
+	public void importResources(Map<String, String> resources) {
+		if (this.resources.size() != 0) {
+			throw new NonEmptyException(String.format(NON_EMPTY, "Resource"));
+		}
+		this.resources.importRegistry(resources);
+	}
+
+	/**
+	 * Imports a new hierarchy of roles.
+	 *
+	 * @param roles The map containing the new hierarchy.
+	 */
+	public void importRoles(Map<String, String> roles) {
+		if (this.roles.size() != 0) {
+			throw new NonEmptyException(String.format(NON_EMPTY, "Role"));
+		}
+		this.roles.importRegistry(roles);
 	}
 
 	/**
