@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.3.0 - 2016-04-08
+
+Achieved 100% test coverage.
+
+### Added
+- Added a new exception for import methods.
+- Added new export methods.
+
 ## 0.2.0 - 2016-03-04
 
 ### Added

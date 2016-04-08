@@ -242,6 +242,24 @@ public class Acl {
 	}
 
 	/**
+	 * Exports a snapshot of the resources registry.
+	 *
+	 * @return A HashMap typically meant for persistent storage.
+	 */
+	public Map<String, String> exportResources() {
+		return this.resources.export();
+	}
+
+	/**
+	 * Exports a snapshot of the roles registry.
+	 *
+	 * @return A HashMap typically meant for persistent storage.
+	 */
+	public Map<String, String> exportRoles() {
+		return this.roles.export();
+	}
+
+	/**
 	 * Imports a new hierarchy of resources.
 	 *
 	 * @param roles The map containing the new hierarchy.

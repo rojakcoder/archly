@@ -1,9 +1,13 @@
 package com.rojakcoder.archly;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.rojakcoder.archly.exceptions.DuplicateEntryException;
+import com.rojakcoder.archly.exceptions.NonEmptyException;
 
 public class AclTest {
 	static Acl acl = Acl.getInstance();
@@ -131,6 +135,11 @@ public class AclTest {
 		acl.allow(rol2, res2, "CREATE");
 		Assert.assertTrue(acl.isAllowed(rol2, res2, "CREATE"));
 		Assert.assertFalse(acl.isAllowed(rol2, res2, "READ"));
+
+		//test coverage - exceptions are not re-thrown
+		acl.allowAllResource(rol0);
+		acl.allowAllRole(res0);
+		acl.allow(rol2, res2, "CREATE");
 	}
 
 	public void testDeny() {
@@ -167,6 +176,10 @@ public class AclTest {
 		acl.deny(rol2, res2, "CREATE");
 		Assert.assertTrue(acl.isDenied(rol2, res2, "CREATE"));
 		Assert.assertFalse(acl.isDenied(rol2, res2, "READ"));
+
+		//test coverage - exceptions are not re-thrown
+		acl.denyAllResource(rol0);
+
 	}
 
 	public void testRemove() {
@@ -472,7 +485,7 @@ public class AclTest {
 
 	@Test(priority = 41)
 	//following the example from http://book.cakephp.org/2.0/en/core-libraries/components/access-control-lists.html
-	public void testCakeExample() {
+	public void testCakeExampleAndImport() {
 		Acl a = Acl.getInstance();
 		a.clear();
 
@@ -490,10 +503,28 @@ public class AclTest {
 		Rol visitors = new Rol("visitors");
 		Rol gollum = new Rol("Gollum");
 
-		a.addRole(warriors);
-		a.addRole(wizards);
-		a.addRole(hobbits);
-		a.addRole(visitors);
+		//test importRoles
+		Map<String, String> roles = new HashMap<>();
+		roles.put(warriors.getId(), "");
+		roles.put(wizards.getId(), "");
+		roles.put(hobbits.getId(), "");
+		roles.put(visitors.getId(), "");
+		a.importRoles(roles);
+//		a.addRole(warriors);
+//		a.addRole(wizards);
+//		a.addRole(hobbits);
+//		a.addRole(visitors);
+		boolean thrown = false;
+		//cannot import twice
+		try {
+			a.importRoles(roles);
+		} catch (NonEmptyException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+		//test exportRoles
+		Map<String, String> expRoles = a.exportRoles();
+		Assert.assertEquals(expRoles, roles);
 
 		a.addRole(gimli, warriors);
 		a.addRole(legolas, warriors);
@@ -514,11 +545,30 @@ public class AclTest {
 		Res diplomacy = new Res("Diplomacy");
 		Res ale = new Res("Ale");
 
-		a.addResource(weapons);
-		a.addResource(ring);
-		a.addResource(pork);
-		a.addResource(diplomacy);
-		a.addResource(ale);
+		//test importResources
+		Map<String, String> resources = new HashMap<>();
+		resources.put(weapons.getId(), "");
+		resources.put(ring.getId(), "");
+		resources.put(pork.getId(), "");
+		resources.put(diplomacy.getId(), "");
+		resources.put(ale.getId(), "");
+		a.importResources(resources);
+//		a.addResource(weapons);
+//		a.addResource(ring);
+//		a.addResource(pork);
+//		a.addResource(diplomacy);
+//		a.addResource(ale);
+		thrown = false;
+		//cannot import twice
+		try {
+			a.importResources(roles);
+		} catch (NonEmptyException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+		//test exportResources
+		Map<String, String> expRes = a.exportResources();
+		Assert.assertEquals(expRes, resources);
 
 		//deny all
 		a.makeDefaultDeny();

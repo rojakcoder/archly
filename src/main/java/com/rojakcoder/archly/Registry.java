@@ -1,6 +1,7 @@
 package com.rojakcoder.archly;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,6 +91,15 @@ class Registry {
 	 */
 	void clear() {
 		registry.clear();
+	}
+
+	/**
+	 * Exports a snapshot of the registry.
+	 *
+	 * @return A HashMap typically meant for persistent storage.
+	 */
+	Map<String, String> export() {
+		return new HashMap<String, String>(registry);
 	}
 
 	/**
