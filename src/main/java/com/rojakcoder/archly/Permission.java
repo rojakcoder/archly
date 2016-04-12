@@ -16,13 +16,15 @@ import com.rojakcoder.archly.exceptions.EntryNotFoundException;
 class Permission {
 	private static final String NOT_FOUND = "Permission %s not found on %s for %s";
 
+	private static final String DEFAULT_KEY = "*::*";
+
 	private static Permission instance;
 
 	/**
 	 * The map of role-resource tuple to permissions.
 	 * <p>
 	 * The first level key is the tuple, the second level key is the action.
-	 * Available values are "ALL", "CREATE", "READ", "UPDATED", "DELETE"
+	 * Available values are "ALL", "CREATE", "READ", "UPDATE", "DELETE"
 	 * </p>
 	 */
 	ConcurrentMap<String, Map<String, Boolean>> permissions;
@@ -404,14 +406,14 @@ class Permission {
 	 * Makes the default permission allow.
 	 */
 	void makeDefaultAllow() {
-		permissions.put("*::*", makePermission(Types.ALL, true));
+		permissions.put(DEFAULT_KEY, makePermission(Types.ALL, true));
 	}
 
 	/**
 	 * Makes the default permission deny.
 	 */
 	void makeDefaultDeny() {
-		permissions.put("*::*", makePermission(Types.ALL, false));
+		permissions.put(DEFAULT_KEY, makePermission(Types.ALL, false));
 	}
 
 	/**
@@ -481,14 +483,6 @@ class Permission {
 		} else {
 			permissions.put(key, perm);
 		}
-
-//
-//		
-//		if (!perm.containsKey(action.toString())) {
-//			throw new EntryNotFoundException(String.format(NOT_FOUND,
-//					action.toString(), resId, roleId));
-//		}
-//		perm.remove(action.toString());
 	}
 
 	/**

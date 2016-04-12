@@ -212,7 +212,7 @@ class Registry {
 			List<String> childIds = findChildren(entry.getId());
 
 			if (removeDescendants) {
-				removeDescendants(childIds);
+				this.removeDescendants(childIds);
 			} else {
 				for (String childId: childIds) {
 					registry.put(childId, parentId);

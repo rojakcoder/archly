@@ -44,10 +44,10 @@ public class PermissionTest {
 		Assert.assertNull(p.isAllowed(rol1, res1));
 		Assert.assertNull(p.isAllowed(rol1, null));
 		Assert.assertNull(p.isAllowed(null, res1));
-		Assert.assertTrue(p.isAllowed(nullres, nullrol));
+		Assert.assertTrue(p.isAllowed(nullrol, nullres));
 		Assert.assertTrue(p
-				.isAllowed(nullres, nullrol, Permission.Types.CREATE));
-		Assert.assertFalse(p.isDenied(nullres, nullrol));
+				.isAllowed(nullrol, nullres, Permission.Types.CREATE));
+		Assert.assertFalse(p.isDenied(nullrol, nullres));
 
 		p.makeDefaultDeny();
 
