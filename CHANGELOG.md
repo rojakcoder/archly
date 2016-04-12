@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.1 - 2016-04-11
+
+Cleaned up the codebase a bit before changing directory.
+
 ## 0.3.0 - 2016-04-08
 
 Achieved 100% test coverage.
