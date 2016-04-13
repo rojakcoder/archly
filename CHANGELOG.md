@@ -1,5 +1,18 @@
 # Change Log
 
+## 0.4.0 - 2016-04-13
+
+### Changed
+- Changed the underlying classes to use String rather than AclEntry
+for the API. The conversion from AclEntry to String is performed
+inside Acl.java
+- Changed Registry.print() to Registry.display()
+
+## 0.3.2 - 2016-04-12
+
+### Changed
+- Changed the instance method print() to display() for Registry.
+
 ## 0.3.1 - 2016-04-11
 
 Cleaned up the codebase a bit before changing directory.

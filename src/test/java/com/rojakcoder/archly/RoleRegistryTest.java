@@ -12,11 +12,11 @@ public class RoleRegistryTest {
 	public void testTraversal() throws DuplicateEntryException {
 		RoleRegistry reg = RoleRegistry.getSingleton();
 		List<String> path = null;
-		Role r1 = new Role("ROLE-1");
-		Role r2 = new Role("ROLE-2");
-		Role r11 = new Role("ROLE-1-1");
-		Role r12 = new Role("ROLE-1-2");
-		Role r111 = new Role("ROLE-1-1-1");
+		String r1 = new String("String-1");
+		String r2 = new String("String-2");
+		String r11 = new String("String-1-1");
+		String r12 = new String("String-1-2");
+		String r111 = new String("String-1-1-1");
 
 		path = reg.traverseRoot(r1);
 		Assert.assertEquals(path.size(), 1);
@@ -45,7 +45,7 @@ public class RoleRegistryTest {
 		path = reg.traverseRoot(r111);
 		Assert.assertEquals(path.size(), 4);
 
-		System.out.println(reg.print(r1, null, null));
+		System.out.println(reg.display(new Role(r1), null, null));
 		System.out.println(reg);
 		System.out.println(Registry.print(path));
 	}

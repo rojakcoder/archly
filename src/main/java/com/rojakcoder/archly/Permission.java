@@ -81,10 +81,10 @@ class Permission {
 	 * Overrides any existing permissions on all actions.
 	 * </p>
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 */
-	void allow(AclEntry role, AclEntry resource) {
+	void allow(String role, String resource) {
 		String key = makeKey(role, resource);
 		Map<String, Boolean> perm = makePermission(Types.ALL, true);
 
@@ -98,11 +98,11 @@ class Permission {
 	 * existing action permission if any.
 	 * </p>
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 * @param action The specific action on the resource.
 	 */
-	void allow(AclEntry role, AclEntry resource, Types action) {
+	void allow(String role, String resource, Types action) {
 		String key = makeKey(role, resource);
 		Map<String, Boolean> perm = null;
 
@@ -128,10 +128,10 @@ class Permission {
 	 * Overrides any existing permissions on all actions.
 	 * </p>
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 */
-	void deny(AclEntry role, AclEntry resource) {
+	void deny(String role, String resource) {
 		String key = makeKey(role, resource);
 		Map<String, Boolean> perm = makePermission(Types.ALL, false);
 
@@ -145,11 +145,11 @@ class Permission {
 	 * existing action permission if any.
 	 * </p>
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 * @param action The specific action on the resource.
 	 */
-	void deny(AclEntry role, AclEntry resource, Types action) {
+	void deny(String role, String resource, Types action) {
 		String key = makeKey(role, resource);
 		Map<String, Boolean> perm = null;
 
@@ -175,24 +175,8 @@ class Permission {
 	/**
 	 * Determines if the role has access on the resource.
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
-	 * @return Returns true only if the role has been explicitly given access to
-	 * all actions on the resource. Returns false if the role has been
-	 * explicitly denied access. Returns null otherwise.
-	 */
-	Boolean isAllowed(AclEntry role, AclEntry resource) {
-		String aroId = role == null ? null : role.getId();
-		String acoId = resource == null ? null : resource.getId();
-
-		return isAllowed(aroId, acoId);
-	}
-
-	/**
-	 * Determines if the role has access on the resource.
-	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 * @return Returns true only if the role has been explicitly given access to
 	 * all actions on the resource. Returns false if the role has been
 	 * explicitly denied access. Returns null otherwise.
@@ -236,32 +220,8 @@ class Permission {
 	 * returned.
 	 * </p>
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
-	 * @param action The access action.
-	 * @return Returns true if the role has access to the specified
-	 * action on the resource. Returns false if the role is denied
-	 * access. Returns null if no permission is specified.
-	 */
-	Boolean isAllowed(AclEntry role, AclEntry resource, Types action) {
-		String aroId = role == null ? null : role.getId();
-		String acoId = resource == null ? null : resource.getId();
-
-		return isAllowed(aroId, acoId, action);
-	}
-
-	/**
-	 * Determines if the role has access on the resource for the specific
-	 * action.
-	 * <p>
-	 * The permission on the specific action is evaluated to see if it has been
-	 * specified. If not specified, the permission on the <code>ALL</code>
-	 * permission is evaluated. If both are not specified, <code>null</code> is
-	 * returned.
-	 * </p>
-	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 * @param action The access action.
 	 * @return Returns true if the role has access to the specified
 	 * action on the resource. Returns false if the role is denied
@@ -285,22 +245,6 @@ class Permission {
 		} //else specific action is present
 
 		return perm.get(action.toString());
-	}
-
-	/**
-	 * Determines if the role is denied access on the resource.
-	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
-	 * @return Returns true only if the role has been explicitly denied access
-	 * to all actions on the resource. Returns false if the role has been
-	 * explicitly granted access. Returns null otherwise.
-	 */
-	Boolean isDenied(AclEntry role, AclEntry resource) {
-		String aro = role == null ? null : role.getId();
-		String aco = resource == null ? null : resource.getId();
-
-		return isDenied(aro, aco);
 	}
 
 	/**
@@ -351,32 +295,8 @@ class Permission {
 	 * returned.
 	 * </p>
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
-	 * @param action The access action.
-	 * @return Returns true if the role is denied access to the specified
-	 * action on the resource. Returns false if the role has
-	 * access. Returns null if no permission is specified.
-	 */
-	Boolean isDenied(AclEntry role, AclEntry resource, Types action) {
-		String aroId = role == null ? null : role.getId();
-		String acoId = resource == null ? null : resource.getId();
-
-		return isDenied(aroId, acoId, action);
-	}
-
-	/**
-	 * Determines if the role is denied access on the resource for the specific
-	 * action.
-	 * <p>
-	 * The permission on the specific action is evaluated to see if it has been
-	 * specified. If not specified, the permission on the <code>ALL</code>
-	 * permission is evaluated. If both are not specified, <code>null</code> is
-	 * returned.
-	 * </p>
-	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 * @param action The access action.
 	 * @return Returns true if the role is denied access to the specified
 	 * action on the resource. Returns false if the role has
@@ -427,13 +347,13 @@ class Permission {
 	 * @throws EntryNotFoundException Throws EntryNotFoundException if the
 	 * permission is not available.
 	 */
-	void remove(AclEntry role, AclEntry resource) throws EntryNotFoundException {
+	void remove(String role, String resource) throws EntryNotFoundException {
 		String key = makeKey(role, resource);
-		String resId = resource == null ? "*" : resource.getId();
-		String roleId = role == null ? "*" : role.getId();
+		String resId = resource == null ? "*" : resource;
+		String roleId = role == null ? "*" : role;
 
 		if (!has(key)) {
-			throw new EntryNotFoundException(String.format(NOT_FOUND, "-",
+			throw new EntryNotFoundException(String.format(NOT_FOUND, key,
 					resId, roleId));
 		}
 		permissions.remove(key);
@@ -442,21 +362,19 @@ class Permission {
 	/**
 	 * Removes the specified permission on resource from role.
 	 *
-	 * @param role The access request object.
-	 * @param resource The access control object.
+	 * @param role The ID of the access request object.
+	 * @param resource The ID of the access control object.
 	 * @param action The access action.
 	 * @throws EntryNotFoundException Throws EntryNotFoundException if the
 	 * permission is not available.
 	 */
-	void remove(AclEntry role, AclEntry resource, Types action)
+	void remove(String role, String resource, Types action)
 			throws EntryNotFoundException {
 		String key = makeKey(role, resource);
-		String resId = resource == null ? "*" : resource.getId();
-		String roleId = role == null ? "*" : role.getId();
 
 		if (!has(key)) {
-			throw new EntryNotFoundException(String.format(NOT_FOUND, "-",
-					resId, roleId));
+			throw new EntryNotFoundException(String.format(NOT_FOUND, key,
+					resource, role));
 		}
 
 		Map<String, Boolean> perm = permissions.get(key);
@@ -475,7 +393,7 @@ class Permission {
 			}
 		} else {
 			throw new EntryNotFoundException(String.format(NOT_FOUND,
-					action.toString(), resId, roleId));
+					action.toString(), resource, role));
 		}
 
 		if (perm.size() == 0) {
@@ -492,24 +410,6 @@ class Permission {
 	 */
 	int size() {
 		return permissions.size();
-	}
-
-	private String makeKey(AclEntry role, AclEntry resource) {
-		String aro;
-		String aco;
-
-		if (role == null) {
-			aro = "*";
-		} else {
-			aro = role.getId();
-		}
-		if (resource == null) {
-			aco = "*";
-		} else {
-			aco = resource.getId();
-		}
-
-		return makeKey(aro, aco);
 	}
 
 	private String makeKey(String aro, String aco) {

@@ -18,9 +18,9 @@ public class ResourceRegistryTest {
 		System.out.println("testAddRemoveEntry");
 
 		ResourceRegistry reg = ResourceRegistry.getSingleton();
-		AclEntry u1 = new Resource("RES-1");
-		AclEntry u2 = new Resource("RES-2");
-		AclEntry u = new Resource("RES");
+		String u1 = new String("RES-1");
+		String u2 = new String("RES-2");
+		String u = new String("RES");
 		boolean thrown = false;
 
 		Assert.assertEquals(reg.size(), 0);
@@ -57,15 +57,15 @@ public class ResourceRegistryTest {
 		boolean thrown = false;
 
 		ResourceRegistry reg = ResourceRegistry.getSingleton();
-		AclEntry u1 = new Resource("RES-1");
-		AclEntry u2 = new Resource("RES-2");
+		String u1 = new String("RES-1");
+		String u2 = new String("RES-2");
 
-		AclEntry u1a = new Resource("RES-1-A");
-		AclEntry u1b = new Resource("RES-1-B");
-		AclEntry u2a = new Resource("RES-2-A");
-		AclEntry u2a1 = new Resource("RES-2-A-1");
-		AclEntry u2a1i = new Resource("RES-2-A-1-i");
-		AclEntry u1b1 = new Resource("RES-1-B-1");
+		String u1a = new String("RES-1-A");
+		String u1b = new String("RES-1-B");
+		String u2a = new String("RES-2-A");
+		String u2a1 = new String("RES-2-A-1");
+		String u2a1i = new String("RES-2-A-1-i");
+		String u1b1 = new String("RES-1-B-1");
 
 		reg.add(u1a, u1);
 		Assert.assertEquals(reg.size(), 3);
@@ -97,15 +97,15 @@ public class ResourceRegistryTest {
 		reg.remove(u1b, false);
 		Assert.assertEquals(reg.size(), 3);
 		Assert.assertTrue(reg.has(u1b1));
-		Assert.assertTrue(reg.hasChild(u1.getId()));
+		Assert.assertTrue(reg.hasChild(u1));
 
 		//remove u1b1 and u1a, and expect u1 to be childless
 		reg.remove(u1b1, false);
 		reg.remove(u1a, true);
 		Assert.assertEquals(reg.size(), 1);
-		Assert.assertFalse(reg.hasChild(u1.getId()));
+		Assert.assertFalse(reg.hasChild(u1));
 
-		System.out.println(reg.print(u1, null, null));
+		System.out.println(reg.display(new Resource(u1), null, null));
 		System.out.println(reg);
 	}
 }

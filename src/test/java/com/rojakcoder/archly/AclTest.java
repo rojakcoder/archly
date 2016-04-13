@@ -7,6 +7,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.rojakcoder.archly.exceptions.DuplicateEntryException;
+import com.rojakcoder.archly.exceptions.EntryNotFoundException;
 import com.rojakcoder.archly.exceptions.NonEmptyException;
 
 public class AclTest {
@@ -18,27 +19,33 @@ public class AclTest {
 		acl.makeDefaultAllow();
 		Assert.assertTrue(acl.isAllowed(null, null));
 
+		//restore to default false
+		acl.makeDefaultDeny();
+		Assert.assertFalse(acl.isAllowed(null, null));
+
 		testResource();
 		testRole();
 		testAllow();
 		testDeny();
 		testRemove();
 		testHierarchy();
+		testRemoveNull();
 	}
 
 	@Test(priority = 49)
 	public void testCoverage() {
 		AclEntry root = new RootEntry();
+		AclEntry nulle = null;
 		//test coverage
 		Assert.assertEquals(root.getEntryDescription(), "ROOT");
 		Assert.assertNull(root.retrieveEntry(null));
 
 		Permission p = Permission.getSingleton();
 		p.permissions.remove("*::*");
-		Assert.assertFalse(acl.isAllowed(null, null));
-		Assert.assertFalse(acl.isAllowed(null, null, "ALL"));
-		Assert.assertFalse(acl.isDenied(null, null));
-		Assert.assertFalse(acl.isDenied(null, null, "ALL"));
+		Assert.assertFalse(acl.isAllowed(nulle, nulle));
+		Assert.assertFalse(acl.isAllowed(nulle, nulle, "ALL"));
+		Assert.assertFalse(acl.isDenied(nulle, nulle));
+		Assert.assertFalse(acl.isDenied(nulle, nulle, "ALL"));
 	}
 
 	public void testResource() {
@@ -108,9 +115,6 @@ public class AclTest {
 		Rol rol1 = new Rol("ARO-1");
 		Res res2 = new Res("ACO-2");
 		Rol rol2 = new Rol("ARO-2");
-
-		//restore to default false
-		acl.makeDefaultDeny();
 
 		//grant role1 to res1
 		Assert.assertFalse(acl.isAllowed(rol1, res1));
@@ -271,11 +275,15 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
 		// rol1 allowed to res1 - overrides * deny res1c
 		Assert.assertFalse(acl.isDenied(rol1, res1c));
+		Assert.assertTrue(acl.isAllowed(rol1, res1c));
 		Assert.assertFalse(acl.isDenied(rol1, res1c1));
+		Assert.assertTrue(acl.isAllowed(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
+		Assert.assertFalse(acl.isAllowed(rol1, res2));
 		//1-3
 		Assert.assertTrue(acl.isDenied(rol1, res3));
+		Assert.assertFalse(acl.isAllowed(rol1, res3));
 		//2-1
 		Assert.assertTrue(acl.isDenied(rol2, res1));
 		Assert.assertTrue(acl.isDenied(rol2, res1a));
@@ -483,6 +491,31 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol4, res4));
 	}
 
+	public void testRemoveNull() {
+		Rol rolna = new Rol("NA-ROLE");
+		Res resna = new Res("NA-RES");
+		Rol nullrol = null;
+		Res nullres = null;
+
+		Assert.assertFalse(acl.isAllowed(rolna, resna));
+		Assert.assertTrue(acl.isDenied(rolna, resna));
+
+		acl.remove(nullrol, nullres);
+
+		//false for both because the root is removed
+		Assert.assertFalse(acl.isAllowed(rolna, resna));
+		Assert.assertFalse(acl.isDenied(rolna, resna));
+
+		boolean thrown = false;
+		try {
+			//removing null again should throw exception
+			acl.remove(nullrol, nullres, "CREATE");
+		} catch (EntryNotFoundException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+	}
+
 	@Test(priority = 41)
 	//following the example from http://book.cakephp.org/2.0/en/core-libraries/components/access-control-lists.html
 	public void testCakeExampleAndImport() {
@@ -627,10 +660,11 @@ public class AclTest {
 		Rol rol = new Rol("ARO");
 
 		System.out.println(">>> RESOURCES");
-		System.out.println(ResourceRegistry.getSingleton().print(res, null,
+		System.out.println(ResourceRegistry.getSingleton().display(res, null,
 				null));
 		System.out.println(">>> ROLES");
-		System.out.println(RoleRegistry.getSingleton().print(rol, null, null));
+		System.out
+				.println(RoleRegistry.getSingleton().display(rol, null, null));
 		System.out.println(">>> PERMISSIONS");
 		System.out.println(Permission.getSingleton());
 	}

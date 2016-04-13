@@ -58,32 +58,33 @@ class Registry {
 	/**
 	 * Adds an entry to the registry.
 	 *
-	 * @param entry The entry to add.
+	 * @param entry The ID of the entry to add.
 	 * @throws DuplicateEntryException Throws DuplicateEntryException if the
 	 * entry is already in the registry.
 	 */
-	void add(AclEntry entry) throws DuplicateEntryException {
-		if (registry.containsKey(entry.getId())) {
+	void add(String entry) throws DuplicateEntryException {
+		if (registry.containsKey(entry)) {
 			throw new DuplicateEntryException(String.format(DUPLICATE_ENTRIES,
-					entry.getId()));
+					entry));
 		}
-		registry.put(entry.getId(), "");
+		registry.put(entry, "");
 	}
 
 	/**
 	 * Adds an entry under a parent entry to the registry.
 	 *
-	 * @param child The child entry to add.
-	 * @param parent The parent entry under which to place the child entry.
+	 * @param child The ID of the child entry to add.
+	 * @param parent The ID of the parent entry under which to place the child
+	 * entry.
 	 * @throws DuplicationException Throws this exception if the child entry is
 	 * already in the registry.
 	 */
-	void add(AclEntry child, AclEntry parent) throws DuplicateEntryException {
-		if (registry.containsKey(child.getId())) {
+	void add(String child, String parent) throws DuplicateEntryException {
+		if (registry.containsKey(child)) {
 			throw new DuplicateEntryException(String.format(DUPLICATE_ENTRIES,
-					child.getId()));
+					child));
 		}
-		registry.put(child.getId(), parent.getId());
+		registry.put(child, parent);
 	}
 
 	/**
@@ -105,11 +106,11 @@ class Registry {
 	/**
 	 * Checks if the entry is stored in the registry.
 	 *
-	 * @param entry The entry to check.
+	 * @param entry The ID of the entry to check.
 	 * @return True if the ID of the entry is present in the registry.
 	 */
-	boolean has(AclEntry entry) {
-		return registry.containsKey(entry.getId());
+	boolean has(String entry) {
+		return registry.containsKey(entry);
 	}
 
 	/**
@@ -134,11 +135,11 @@ class Registry {
 	/**
 	 * Creates a traversal path from the entry to the root.
 	 *
-	 * @param entry The entry to start traversing from.
+	 * @param entry The ID of the entry to start traversing from.
 	 * @return A list of entry IDs starting from the entry and ending with the
 	 * root.
 	 */
-	List<String> traverseRoot(AclEntry entry) {
+	List<String> traverseRoot(String entry) {
 		List<String> path = new ArrayList<>();
 
 		if (entry == null) {
@@ -147,7 +148,7 @@ class Registry {
 			return path;
 		}
 
-		String eId = entry.getId();
+		String eId = entry;
 
 		while (registry.containsKey(eId)) {
 			path.add(eId);
@@ -167,7 +168,7 @@ class Registry {
 	 * @return The string representing the parent-child relationships between
 	 * the entries.
 	 */
-	String print(AclEntry loader, String leading, String entryId) {
+	String display(AclEntry loader, String leading, String entryId) {
 		StringBuilder sb = new StringBuilder();
 		List<String> childIds = null;
 
@@ -185,7 +186,7 @@ class Registry {
 			sb.append("- ");
 			sb.append(entry.getEntryDescription());
 			sb.append("\n");
-			sb.append(print(loader, " " + leading, childId));
+			sb.append(this.display(loader, " " + leading, childId));
 		}
 
 		return sb.toString();
@@ -194,22 +195,21 @@ class Registry {
 	/**
 	 * Removes an entry from the registry.
 	 *
-	 * @param entry The entry to remove from the registry.
+	 * @param entry The ID of the entry to remove from the registry.
 	 * @param removeDescendants If true, all child entries and descendants are
 	 * removed as well.
 	 * @throws NotFoundException Throws this exception if the entry or any of
 	 * the descendants (if {@code removeDscendants} is true} are not found.
 	 */
-	void remove(AclEntry entry, boolean removeDescendants)
+	void remove(String entry, boolean removeDescendants)
 			throws EntryNotFoundException {
-		if (!registry.containsKey(entry.getId())) {
-			throw new EntryNotFoundException(String.format(NOT_FOUND,
-					entry.getId()));
+		if (!registry.containsKey(entry)) {
+			throw new EntryNotFoundException(String.format(NOT_FOUND, entry));
 		}
 
-		if (hasChild(entry.getId())) {
-			String parentId = registry.get(entry.getId());
-			List<String> childIds = findChildren(entry.getId());
+		if (hasChild(entry)) {
+			String parentId = registry.get(entry);
+			List<String> childIds = findChildren(entry);
 
 			if (removeDescendants) {
 				this.removeDescendants(childIds);
@@ -220,7 +220,7 @@ class Registry {
 			}
 		}
 
-		registry.remove(entry.getId());
+		registry.remove(entry);
 	}
 
 	/**

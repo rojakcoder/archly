@@ -48,7 +48,7 @@ public class Acl {
 	 * the resource registry.
 	 */
 	public void addResource(AclEntry resource) throws DuplicateEntryException {
-		resources.add(resource);
+		resources.add(resource.getId());
 	}
 
 	/**
@@ -61,7 +61,7 @@ public class Acl {
 	 */
 	public void addResource(AclEntry resource, AclEntry parent)
 			throws DuplicateEntryException {
-		resources.add(resource, parent);
+		resources.add(resource.getId(), parent.getId());
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class Acl {
 	 * the role registry.
 	 */
 	public void addRole(AclEntry role) throws DuplicateEntryException {
-		roles.add(role);
+		roles.add(role.getId());
 	}
 
 	/**
@@ -85,7 +85,7 @@ public class Acl {
 	 */
 	public void addRole(AclEntry role, AclEntry parent)
 			throws DuplicateEntryException {
-		roles.add(role, parent);
+		roles.add(role.getId(), parent.getId());
 	}
 
 	/**
@@ -95,11 +95,11 @@ public class Acl {
 	 */
 	public void allowAllResource(AclEntry role) {
 		try {
-			roles.add(role);
+			roles.add(role.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.allow(role, new RootEntry());
+		perms.allow(role.getId(), new RootEntry().getId());
 	}
 
 	/**
@@ -109,11 +109,11 @@ public class Acl {
 	 */
 	public void allowAllRole(AclEntry resource) {
 		try {
-			resources.add(resource);
+			resources.add(resource.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.allow(new RootEntry(), resource);
+		perms.allow(new RootEntry().getId(), resource.getId());
 	}
 
 	/**
@@ -124,16 +124,16 @@ public class Acl {
 	 */
 	public void allow(AclEntry role, AclEntry resource) {
 		try {
-			roles.add(role);
+			roles.add(role.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
 		try {
-			resources.add(resource);
+			resources.add(resource.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.allow(role, resource);
+		perms.allow(role.getId(), resource.getId());
 	}
 
 	/**
@@ -148,16 +148,16 @@ public class Acl {
 		Permission.Types actionType = Permission.Types.valueOf(action);
 
 		try {
-			roles.add(role);
+			roles.add(role.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
 		try {
-			resources.add(resource);
+			resources.add(resource.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.allow(role, resource, actionType);
+		perms.allow(role.getId(), resource.getId(), actionType);
 	}
 
 	/**
@@ -176,11 +176,11 @@ public class Acl {
 	 */
 	public void denyAllResource(AclEntry role) {
 		try {
-			roles.add(role);
+			roles.add(role.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.deny(role, new RootEntry());
+		perms.deny(role.getId(), new RootEntry().getId());
 	}
 
 	/**
@@ -190,11 +190,11 @@ public class Acl {
 	 */
 	public void denyAllRole(AclEntry resource) {
 		try {
-			resources.add(resource);
+			resources.add(resource.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.deny(new RootEntry(), resource);
+		perms.deny(new RootEntry().getId(), resource.getId());
 	}
 
 	/**
@@ -205,16 +205,16 @@ public class Acl {
 	 */
 	public void deny(AclEntry role, AclEntry resource) {
 		try {
-			roles.add(role);
+			roles.add(role.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
 		try {
-			resources.add(resource);
+			resources.add(resource.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.deny(role, resource);
+		perms.deny(role.getId(), resource.getId());
 	}
 
 	/**
@@ -229,16 +229,16 @@ public class Acl {
 		Permission.Types actionType = Permission.Types.valueOf(action);
 
 		try {
-			roles.add(role);
+			roles.add(role.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
 		try {
-			resources.add(resource);
+			resources.add(resource.getId());
 		} catch (DuplicateEntryException e) {
 			//do nothing
 		}
-		perms.deny(role, resource, actionType);
+		perms.deny(role.getId(), resource.getId(), actionType);
 	}
 
 	/**
@@ -292,11 +292,14 @@ public class Acl {
 	 * otherwise.
 	 */
 	public boolean isAllowed(AclEntry role, AclEntry resource) {
+		String rol = role == null ? null : role.getId();
+		String res = resource == null ? null : resource.getId();
+
 		//get the traversal path for role
-		List<String> rolePath = roles.traverseRoot(role);
+		List<String> rolePath = roles.traverseRoot(rol);
 
 		//get the traversal path for resource
-		List<String> resPath = resources.traverseRoot(resource);
+		List<String> resPath = resources.traverseRoot(res);
 
 		//check role-resource
 		for (String aro: rolePath) {
@@ -323,11 +326,14 @@ public class Acl {
 	 * otherwise.
 	 */
 	public boolean isAllowed(AclEntry role, AclEntry resource, String action) {
+		String rol = role == null ? null : role.getId();
+		String res = resource == null ? null : resource.getId();
+
 		//get the traversal path for role
-		List<String> rolePath = roles.traverseRoot(role);
+		List<String> rolePath = roles.traverseRoot(rol);
 
 		//get the traversal path for resource
-		List<String> resPath = resources.traverseRoot(resource);
+		List<String> resPath = resources.traverseRoot(res);
 
 		Permission.Types actionType = Permission.Types.valueOf(action);
 
@@ -354,11 +360,14 @@ public class Acl {
 	 * otherwise.
 	 */
 	public boolean isDenied(AclEntry role, AclEntry resource) {
+		String rol = role == null ? null : role.getId();
+		String res = resource == null ? null : resource.getId();
+
 		//get the traversal path for role
-		List<String> rolePath = roles.traverseRoot(role);
+		List<String> rolePath = roles.traverseRoot(rol);
 
 		//get the traversal path for resource
-		List<String> resPath = resources.traverseRoot(resource);
+		List<String> resPath = resources.traverseRoot(res);
 
 		//check role-resource
 		for (String aro: rolePath) {
@@ -385,11 +394,14 @@ public class Acl {
 	 * otherwise.
 	 */
 	public boolean isDenied(AclEntry role, AclEntry resource, String action) {
+		String rol = role == null ? null : role.getId();
+		String res = resource == null ? null : resource.getId();
+
 		//get the traversal path for role
-		List<String> rolePath = roles.traverseRoot(role);
+		List<String> rolePath = roles.traverseRoot(rol);
 
 		//get the traversal path for resource
-		List<String> resPath = resources.traverseRoot(resource);
+		List<String> resPath = resources.traverseRoot(res);
 
 		Permission.Types actionType = Permission.Types.valueOf(action);
 
@@ -431,7 +443,10 @@ public class Acl {
 	 */
 	public void remove(AclEntry role, AclEntry resource)
 			throws EntryNotFoundException {
-		perms.remove(role, resource);
+		String rol = role == null ? null : role.getId();
+		String res = resource == null ? null : resource.getId();
+
+		perms.remove(rol, res);
 	}
 
 	/**
@@ -447,9 +462,11 @@ public class Acl {
 	 */
 	public void remove(AclEntry role, AclEntry resource, String action)
 			throws EntryNotFoundException {
+		String rol = role == null ? null : role.getId();
+		String res = resource == null ? null : resource.getId();
 		Permission.Types actionType = Permission.Types.valueOf(action);
 
-		perms.remove(role, resource, actionType);
+		perms.remove(rol, res, actionType);
 	}
 }
 

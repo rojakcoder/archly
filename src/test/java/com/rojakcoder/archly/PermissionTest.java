@@ -21,10 +21,10 @@ public class PermissionTest {
 	}
 
 	public void testIsAllowedDenied() {
-		Pres res1 = new Pres("RES-1");
-		Prol rol1 = new Prol("ROLE-1");
-		Pres nullres = null;
-		Prol nullrol = null;
+		String res1 = new String("RES-1");
+		String rol1 = new String("ROLE-1");
+		String nullres = null;
+		String nullrol = null;
 
 		//null because permissions not specified
 		Assert.assertNull(p.isAllowed(rol1, res1));
@@ -60,8 +60,8 @@ public class PermissionTest {
 	}
 
 	public void testAllow() {
-		Pres res1 = new Pres("RES-1");
-		Prol rol1 = new Prol("ROLE-1");
+		String res1 = "RES-1";
+		String rol1 = "ROLE-1";
 
 		Assert.assertNull(p.isAllowed(rol1, res1));
 		Assert.assertNull(p.isDenied(rol1, res1));
@@ -123,7 +123,7 @@ public class PermissionTest {
 		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.READ));
 		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.DELETE));
-		//no explicit deny on ALL, explicity deny on DELETE
+		//no explicit deny on ALL, explicit deny on DELETE
 		Assert.assertNull(p.isDenied(rol1, res1));
 		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.CREATE));
 		Assert.assertNull(p.isDenied(rol1, res1, Permission.Types.READ));
@@ -139,7 +139,7 @@ public class PermissionTest {
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.READ));
 		Assert.assertNull(p.isAllowed(rol1, res1, Permission.Types.UPDATE));
 		Assert.assertTrue(p.isAllowed(rol1, res1, Permission.Types.DELETE));
-		//no expclit deny on ALL, explicit allow on some
+		//no explicit deny on ALL, explicit allow on some
 		Assert.assertFalse(p.isDenied(rol1, res1));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.READ));
@@ -162,8 +162,8 @@ public class PermissionTest {
 
 	public void testDeny() {
 		//use different identifiers
-		Pres res1 = new Pres("RES-A");
-		Prol rol1 = new Prol("ROLE-A");
+		String res1 = "RES-A";
+		String rol1 = "ROLE-A";
 
 		Assert.assertNull(p.isAllowed(rol1, res1));
 		Assert.assertNull(p.isDenied(rol1, res1));
@@ -207,7 +207,7 @@ public class PermissionTest {
 		Assert.assertFalse(p.isDenied(rol1, res1, Permission.Types.DELETE));
 
 		p.remove(rol1, res1, Permission.Types.UPDATE);
-		//false because ther eis an explicit deny on ALL
+		//false because there is an explicit deny on ALL
 		Assert.assertFalse(p.isAllowed(rol1, res1));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.CREATE));
 		Assert.assertFalse(p.isAllowed(rol1, res1, Permission.Types.READ));
@@ -276,10 +276,10 @@ public class PermissionTest {
 	}
 
 	public void testRemove() {
-		Pres res1 = new Pres("RES-1");
-		Prol rol1 = new Prol("ROLE-1");
-		Pres resna = new Pres("RES-NA");
-		Prol rolna = new Prol("ROLE-NA");
+		String res1 = new String("RES-1");
+		String rol1 = new String("ROLE-1");
+		String resna = new String("RES-NA");
+		String rolna = new String("ROLE-NA");
 
 		//non-existing role and resource
 		boolean thrown = false;
