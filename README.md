@@ -1,13 +1,13 @@
 # Introduction
 
-Archly is a project for creating a hierarchy based access control list (ACL).
+Archly is a project for creating a hierarchy-based access control list (ACL).
 
 This project is inspired by [CakePHP's Access Control
 Lists](http://book.cakephp.org/2.0/en/core-libraries/components/access-control-lists.html)
 
 ## Java
 
-[archly-java](https://github.com/rojakcoder/archly-java) is the Java implementation of this ACL library.
+The Java implementation of this ACL library is under the `java` folder.
 
 The library functions are exposed via the Acl.java class.
 

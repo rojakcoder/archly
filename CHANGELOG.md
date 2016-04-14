@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016-04-14
+
+Moved the entire codebase into the `java` directory.
+
 ## 0.4.0 - 2016-04-13
 
 ### Changed
