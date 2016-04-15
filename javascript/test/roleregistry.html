@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>RoleRegistry Test</title>
+    <link rel="stylesheet" href="lib/qunit.css">
+</head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+<script src="lib/qunit.js"></script>
+<script src="/acl.js"></script>
+<script type="text/javascript">
+QUnit.module('RoleRegistry');
+
+var Role = function (id) {
+    this.id = id;
+};
+Role.prototype.getEntryDescription = function () {
+    return this.id;
+};
+Role.prototype.getId = function () {
+    return this.id;
+};
+Role.prototype.retrieveEntry = function (id) {
+    return new Role(id);
+};
+
+QUnit.test("ACL library present", function () {
+    ok(null != ROLE_REGISTRY, "RoleRegistry present");
+});
+
+QUnit.test('Registry functions', function () {
+    var r1 = new Role('R1'),
+        reg = ROLE_REGISTRY;
+
+    equal(reg.has(r1), false, 'Registry is empty');
+    reg.add(r1);
+    equal(reg.has(r1), true, 'Registry has 1 entry');
+});
+
+QUnit.test("Traversal", function () {
+    var path,
+        r1 = new Role('ROLE-1'),
+        r2 = new Role('ROLE-2'),
+        r11 = new Role('ROLE-1-1'),
+        r12 = new Role('ROLE-1-2'),
+        r111 = new Role('ROLE-1-1-1'),
+        reg = window.ROLE_REGISTRY;
+
+    path = reg.traverseRoot(r1);
+    ok(path.length === 1, 'No entries present');
+
+    reg.add(r1);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'ROLE-1 present');
+
+    reg.add(r2);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'Addition of sibling ROLE-2 has no effect');
+
+    reg.add(r11, r1);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'Length is still 2 because same traversal starting point');
+    path = reg.traverseRoot(r11);
+    equal(path.length, 3, 'Length is 3 because of addition of child');
+
+    reg.add(r12, r1);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'Length is still 2 because same traversal starting point');
+    path = reg.traverseRoot(r12);
+    equal(path.length, 3, 'Length is 3 because of addition of child');
+
+    reg.add(r111, r11);
+    path = reg.traverseRoot(r111);
+    equal(path.length, 4, 'Length is 4 because of addition of grandchild');
+
+    //test the output
+    console.info(reg.display(r1));
+    console.info(reg.toString());
+    console.info(REGISTRY.display(path));
+});
+</script>
+</body>
+</html>

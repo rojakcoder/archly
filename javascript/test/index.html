@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>ACL Test</title>
+    <link rel="stylesheet" href="lib/qunit.css">
+</head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+<script src="lib/qunit.js"></script>
+<script src="/acl.js"></script>
+<script type="text/javascript">
+QUnit.module('ResourceRegistry');
+
+var Resource = function (id) {
+    this.id = id;
+};
+Resource.prototype.getEntryDescription = function () {
+    return this.id;
+};
+Resource.prototype.getId = function () {
+    return this.id;
+};
+Resource.prototype.retrieveEntry = function (id) {
+    return new Resource(id);
+};
+
+var Role = function (id) {
+    this.id = id;
+};
+Role.prototype.getEntryDescription = function () {
+    return this.id;
+};
+Role.prototype.getId = function () {
+    return this.id;
+};
+Role.prototype.retrieveEntry = function (id) {
+    return new Role(id);
+};
+
+QUnit.test("Resource Registry present", function () {
+    ok(null != ROLE_REGISTRY, "ResourceRegistry present");
+});
+
+QUnit.test('Add/Remove Entry', function () {
+    var r1 = 'RES-1',
+        r2 = 'RES-2',
+        r = 'RES',
+        reg = RESOURCE_REGISTRY,
+        thrown = false;
+
+    equal(reg.size(), 0, 'Resource registry starts empty.');
+
+    reg.add(r1);
+    equal(reg.size(), 1, 'RES-1 added');
+    try {
+        reg.add(r1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown, 'Cannot have duplicate entries in registry');
+
+    reg.add(r2);
+    equal(reg.size(), 2, 'RES-2 added');
+
+    thrown = false;
+    try {
+        reg.remove(r, false);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown, 'Cannot remove non-existing entry in registry');
+
+    reg.remove(r1);
+    equal(reg.size(), 1);
+
+    //add RES-1 back
+    reg.add(r1);
+});
+
+QUnit.test('Add/Remove parents', function () {
+//    var r1 = new Resource('RES-1'),
+//        r2 = new Resource('RES-2'),
+//        r1a = new Resource('RES-1-A'),
+//        r1b = new Resource('RES-1-B'),
+//        r2a = new Resource('RES-2-A'),
+//        r2a1 = new Resource('RES-2-A-1'),
+//        r2a1i = new Resource('RES-2-A-1-i'),
+//        r1b1 = new Resource('ReS-1-B-1'),
+    var r1    = 'RES-1',
+        r2    = 'RES-2',
+        r1a   = 'RES-1-A',
+        r1b   = 'RES-1-B',
+        r2a   = 'RES-2-A',
+        r2a1  = 'RES-2-A-1',
+        r2a1i = 'RES-2-A-1-i',
+        r1b1  = 'ReS-1-B-1',
+        reg = RESOURCE_REGISTRY,
+        thrown = false;
+
+    reg.add(r1a, r1);
+    equal(reg.size(), 3);
+
+    reg.add(r1b, r1);
+    equal(reg.size(), 4);
+
+    thrown = false;
+    try {
+        reg.add(r1b, r1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+
+    reg.add(r2a, r2);
+    reg.add(r1b1, r1b);
+    equal(reg.size(), 6);
+
+    reg.add(r2a1, r2a);
+    reg.add(r2a1i, r2a1);
+    equal(reg.size(), 8);
+
+    //remove r2 and all descendants
+    reg.remove(r2, true);
+    equal(reg.size(), 4);
+
+    //remove 1rb and expect r1b1 to be under r1
+    reg.remove(r1b, false);
+    equal(reg.size(), 3);
+    ok(reg.has(r1b1));
+    ok(reg.hasChild(r1));
+
+    //remove r1b1 and r1a and expect r1 to be childless
+    reg.remove(r1b1, false);
+    reg.remove(r1a, true);
+    equal(reg.size(), 1);
+    notOk(reg.hasChild(r1));
+});
+
+QUnit.module('RoleRegistry');
+
+QUnit.test("Role Registry present", function () {
+    ok(null != ROLE_REGISTRY, "RoleRegistry present");
+});
+
+QUnit.test('Registry functions', function () {
+    var r1 = 'Rr1',
+        reg = ROLE_REGISTRY;
+
+    equal(reg.has(r1), false, 'Registry is empty');
+    reg.add(r1);
+    equal(reg.has(r1), true, 'Registry has 1 entry');
+});
+
+QUnit.test("Traversal", function () {
+    var path,
+        r1 = 'ROLE-1',
+        r2 = 'ROLE-2',
+        r11 = 'ROLE-1-1',
+        r12 = 'ROLE-1-2',
+        r111 = 'ROLE-1-1-1',
+        reg = window.ROLE_REGISTRY;
+
+    path = reg.traverseRoot(r1);
+    ok(path.length === 1, 'Role registry starts empty.');
+
+    reg.add(r1);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'ROLE-1 added');
+
+    reg.add(r2);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'Addition of sibling ROLE-2 has no effect');
+
+    reg.add(r11, r1);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'Length is still 2 because same traversal starting point');
+    path = reg.traverseRoot(r11);
+    equal(path.length, 3, 'Length is 3 because of addition of child');
+
+    reg.add(r12, r1);
+    path = reg.traverseRoot(r1);
+    equal(path.length, 2, 'Length is still 2 because same traversal starting point');
+    path = reg.traverseRoot(r12);
+    equal(path.length, 3, 'Length is 3 because of addition of child');
+
+    reg.add(r111, r11);
+    path = reg.traverseRoot(r111);
+    equal(path.length, 4, 'Length is 4 because of addition of grandchild');
+
+    //test the output
+    console.info(reg.display(new Role(r1)));
+    console.info(reg.toString());
+    //console.info(REGISTRY.display(path));
+});
+
+QUnit.module('Permissions');
+
+QUnit.test('isAllowed()/isDenied()', function () {
+//    var res1 = new Resource('RES-1'),
+//        rol1 = new Role('ROLE-1'),
+    var res1 = 'RES-1',
+        rol1 = 'ROLE-1',
+        nullres = null,
+        nullrol = null,
+        P = PERMISSIONS;
+
+    equal(P.isAllowedAll(rol1, res1), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(rol1, res1), null,
+        'null because permissions not set yet');
+    equal(P.isAllowedAll(rol1), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(rol1), null,
+        'null because permissions not set yet');
+    equal(P.isAllowedAll(null, res1), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(null, res1), null,
+        'null because permissions not set yet');
+    equal(P.isAllowedAll(nullrol, nullres), false,
+        'false because permissions not set yet');
+    equal(P.isDeniedAll(nullrol, nullres), true,
+        'true because default is deny');
+
+    P.makeDefaultAllow();
+
+    equal(P.isAllowedAll(rol1, res1), null,
+        'null because permissions not set yet');
+    equal(P.isAllowedAll(rol1, null), null,
+        'null because permissions not set yet');
+    equal(P.isAllowedAll(null, res1), null,
+        'null because permissions not set yet');
+    equal(P.isAllowedAll(nullrol, nullres), true,
+        'true because default is allow');
+    equal(P.isAllowed(nullrol, nullres, PERMISSION_TYPES.CREATE),
+        true, 'true because default is allow');
+    equal(P.isDeniedAll(nullrol, nullres), false,
+        'false because default is allow');
+
+    P.makeDefaultDeny();
+
+    equal(P.isDeniedAll(rol1, res1), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(rol1, null), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(null, res1), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(nullrol, nullres, PERMISSION_TYPES.CREATE),
+        true, 'true because default is deny');
+    equal(P.isAllowedAll(nullres, nullrol), false,
+        'false because default is deny');
+});
+
+QUnit.test('allow()', function () {
+//    var res1 = new Resource('RES-1'),
+//        rol1 = new Role('ROLE-1'),
+    var res1 = 'RES-1',
+        rol1 = 'ROLE-1',
+        P = PERMISSIONS;
+
+    equal(P.isAllowedAll(rol1, res1), null,
+        'null because permissions not set yet');
+    equal(P.isDeniedAll(rol1, res1), null,
+        'null because permissions not set yet');
+
+    P.allow(rol1, res1);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), true,
+        'allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because allowed rol1 to res1');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'false becaused allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because allowed rol1 to res1');
+
+    P.deny(rol1, res1, PERMISSION_TYPES.UPDATE);
+    P.deny(rol1, res1, PERMISSION_TYPES.DELETE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+         'No longer ALL ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is false because of overriding DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because of overriding DENY');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+         'not all actions are denied');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is true because of overriding DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because of overriding DENY');
+
+console.log('P1', P.toString());
+    P.remove(rol1, res1, PERMISSION_TYPES.UPDATE);
+console.log('P2', P.toString());
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+         'No longer ALL ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is true because DENY is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because of overriding DENY');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+         'not all actions are denied');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is false because DENY is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because of overriding DENY');
+
+    P.remove(rol1, res1);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), null,
+         'ALL is now null');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        null, 'null because ALL is removed');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), null,
+        'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        null, 'null because ALL is removed');
+
+    P.deny(rol1, res1, PERMISSION_TYPES.DELETE);
+    //ALL is removed, DELETE is false, others are NULL
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+         'false because DELETE is DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because only DELETE is set (as DENY)');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because only DELETE is set (as DENY)');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because only DELETE is set (as DENY)');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'false because only DELETE is set (as DENY)');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), null,
+        'null because no explicit DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because no explicit DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because no explicit DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because no explicit DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'true because explicit DENY');
+
+    P.allow(rol1, res1, PERMISSION_TYPES.CREATE);
+    P.allow(rol1, res1, PERMISSION_TYPES.READ);
+    P.allow(rol1, res1, PERMISSION_TYPES.DELETE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), null,
+         'null because no explicit ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'true because CREATE is ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'true because READ is ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because UPDATE is not set');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'true because DELETE is ALLOW');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'false because no explicit DENY on all, explicit ALLOW on some');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'false because CREATE is ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'false because READ is ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because UPDATE is not set');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'false because DELETE is ALLOW');
+
+    //equivalent of ALL allow
+    P.allow(rol1, res1, PERMISSION_TYPES.UPDATE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), true,
+         'true because effectively ALL ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'true because CREATE is ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'true because READ is ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'true because UPDATE is ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'true because DELETE is ALLOW');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'false because effectively ALL ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'false because CREATE is ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'false because READ is ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'false because UPDATE is ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'false because DELETE is ALLOW');
+});
+
+QUnit.test('deny()', function () {
+//    var res1 = new Resource('RES-A'),
+//        rol1 = new Role('ROLE-A'),
+    var res1 = 'RES-A',
+        rol1 = 'ROLE-A',
+        P = PERMISSIONS;
+
+    equal(P.isAllowedAll(rol1, res1));
+    equal(P.isDeniedAll(rol1, res1));
+
+    P.allow(rol1, res1);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), true,
+        'allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is true because allowed rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because allowed rol1 to res1');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'false becaused allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is false because allowed rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because allowed rol1 to res1');
+
+    P.deny(rol1, res1);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+        'denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because denied rol1 to res1');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), true,
+        'true becaused denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because denied rol1 to res1');
+
+    P.allow(rol1, res1, PERMISSION_TYPES.UPDATE);
+    P.allow(rol1, res1, PERMISSION_TYPES.DELETE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+        'false because not all actions are DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is true because of overriding ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because of overriding ALLOW');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'No longer ALL DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is false because of overriding ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because of overriding ALLOW');
+
+    P.remove(rol1, res1, PERMISSION_TYPES.UPDATE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+        'false because explicit DENY on ALL');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'CREATE is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'READ is false because denied rol1 to res1');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'UPDATE is true because ALLOW is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'DELETE is true because of overriding ALLOW');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'No longer ALL DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'CREATE is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'READ is true because denied rol1 to res1');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'UPDATE is false because ALLOW is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'DELETE is false because of overriding ALLOW');
+
+    P.remove(rol1, res1);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), null,
+         'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because ALL is removed');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        null, 'null because ALL is removed');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), null,
+        'ALL is now null');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because ALL is removed');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        null, 'null because ALL is removed');
+
+    P.allow(rol1, res1, PERMISSION_TYPES.DELETE);
+    //ALL is removed, DELETE is true, others are NULL
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), null,
+         'null because no explicit ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because no explicit ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because no explicit ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because no explicit ALLOW');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'true because explicit ALLOW');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), false,
+        'false because DELETE is ALLOW');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        null, 'null because only DELETE is set (as ALLOW)');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        null, 'null because only DELETE is set (as ALLOW)');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because only DELETE is set (as ALLOW)');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'false because only DELETE is set (as ALLOW)');
+
+    P.deny(rol1, res1, PERMISSION_TYPES.CREATE);
+    P.deny(rol1, res1, PERMISSION_TYPES.READ);
+    P.deny(rol1, res1, PERMISSION_TYPES.DELETE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+         'false because no explicit ALLOW on all, explicity DENY on some');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'false because CREATE is DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'false because READ is DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because UPDATE is not set');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'false because DELETE is DENY');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), null,
+        'null because no explicit DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'true because CREATE is DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'true because READ is DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        null, 'null because UPDATE is not set');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'true because DELETE is DENY');
+
+    //equivalent of ALL deny
+    P.deny(rol1, res1, PERMISSION_TYPES.UPDATE);
+
+    //test allow
+    equal(P.isAllowedAll(rol1, res1), false,
+         'false because effectively ALL DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.CREATE),
+        false, 'false because CREATE is DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.READ),
+        false, 'false because READ is DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.UPDATE),
+        false, 'false because UPDATE is DENY');
+    equal(P.isAllowed(rol1, res1, PERMISSION_TYPES.DELETE),
+        false, 'false because DELETE is DENY');
+    //test deny
+    equal(P.isDeniedAll(rol1, res1), true,
+        'true because effectively ALL DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.CREATE),
+        true, 'true because CREATE is DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.READ),
+        true, 'true because READ is DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.UPDATE),
+        true, 'true because UPDATE is DENY');
+    equal(P.isDenied(rol1, res1, PERMISSION_TYPES.DELETE),
+        true, 'true because DELETE is DENY');
+});
+
+QUnit.test('remove()', function () {
+    var res1 = 'RES-1',
+        rol1 = 'ROLE-1',
+        resna = 'RES-NA',
+        rolna = 'ROLE-NA',
+//    var res1 = new Resource('RES-1'),
+//        rol1 = new Role('ROLE-1'),
+//        resna = new Resource('RES-NA'),
+//        rolna = new Role('ROLE-NA'),
+//        thrown = false,
+        P = PERMISSIONS;
+
+    //non-existing role and resource
+    try {
+        P.remove(rolna, resna);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+    thrown = false;
+    try {
+        P.remove(rol1, resna);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+    thrown = false;
+    try {
+        P.remove(rolna, res1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+
+    //non-existing role and resource
+    thrown = false;
+    try {
+        P.remove(rolna, resna, PERMISSION_TYPES.CREATE);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+    thrown = false;
+    try {
+        P.remove(rol1, resna, PERMISSION_TYPES.CREATE);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+    thrown = false;
+    try {
+        P.remove(rolna, res1, PERMISSION_TYPES.CREATE);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+
+    thrown = false;
+    try {
+        P.remove(rol1, res1, PERMISSION_TYPES.CREATE);
+    } catch (e) {
+        thrown = true;
+    }
+    notOk(thrown); //no excpetion
+    thrown = false;
+    try {
+        P.remove(rol1, res1, PERMISSION_TYPES.CREATE);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown); //exception when repeated
+
+    //remove the root privileges
+    P.remove();
+    //trying to remove the root but already removed
+    thrown = false;
+    try {
+        P.remove(null, null, PERMISSION_TYPES.CREATE);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown); //exception when repeated
+});
+
+QUnit.module('Acl');
+
+QUnit.test('Default', function () {
+    var A = ACL;
+
+    equal(A.isAllowed(), false, 'Default false');
+    A.makeDefaultAllow();
+    equal(A.isAllowed(), true, 'Changed default to true');
+    A.makeDefaultDeny();
+    equal(A.isAllowed(), false, 'Change back to false');
+});
+
+QUnit.test('Test Resource', function () {
+    var res1 = new Resource('ACO-1'),
+        res1a = new Resource('ACO-1-A'),
+        thrown = false;
+
+    ACL.addResource(res1);
+    try {
+        ACL.addResource(res1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+
+    ACL.addResource(res1a, res1);
+    thrown = false;
+    try {
+        acl.addResource(res1a);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+    thrown = false;
+    try {
+        acl.addResource(res1a, res1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+});
+
+QUnit.test('Test Role', function () {
+    var rol1 = new Role('ARO-1'),
+        rol1a = new Role('ARO-1-A'),
+        thrown = false;
+
+    ACL.addRole(rol1);
+    try {
+        ACL.addRole(rol1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+
+    ACL.addRole(rol1a, rol1);
+    thrown = false;
+    try {
+        ACL.addRole(rol1a);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+    thrown = false;
+    try {
+        ACL.addRole(rol1a, rol1);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+});
+
+QUnit.test('Test Allow', function () {
+    var res0 = new Resource('ACO-0'),
+        rol0 = new Role('ARO-0'),
+        res1 = new Resource('ACO-1'),
+        rol1 = new Role('ARO-1'),
+        res2 = new Resource('ACO-2'),
+        rol2 = new Role('ARO-2'),
+        thrown = false;
+
+    notOk(ACL.isAllowed(rol1, res1), 'Permission not set');
+    ACL.allow(rol1, res1);
+    ok(ACL.isAllowed(rol1, res1), 'Role 1 allowed access to Res 1');
+
+    notOk(ACL.isAllowed(rol0, res1), 'Permission not set');
+    notOk(ACL.isAllowed(rol0, res2), 'Permission not set');
+    ACL.allowAllResource(rol0);
+    ok(ACL.isAllowed(rol0, res1), 'Granted via all resource');
+    ok(ACL.isAllowed(rol0, res2), 'Granted via all resource');
+    notOk(ACL.isAllowed(rol1, res0), 'Permission not set');
+    notOk(ACL.isAllowed(rol2, res0), 'Permission not set');
+    ACL.allowAllRole(res0);
+    ok(ACL.isAllowed(rol1, res0), 'Granted via all role');
+    ok(ACL.isAllowed(rol2, res0), 'Granted via all role');
+
+    notOk(ACL.isAllowed(rol2, res2, 'CREATE'), 'Permission not set');
+    notOk(ACL.isAllowed(rol2, res2, 'READ'), 'Permission not set');
+    ACL.allow(rol2, res2, 'CREATE');
+    ok(ACL.isAllowed(rol2, res2, 'CREATE'), 'Role 2 allowed CREATE access to Res 2');
+    notOk(ACL.isAllowed(rol2, res2, 'READ'), 'Permission not set');
+
+    thrown = false;
+    try {
+        ACL.allowAllResource(rol0);
+    } catch (e) {
+        thrown = true;
+    }
+    notOk(thrown, 'Repeated addition of role does not throw error');
+    thrown = false;
+    try {
+        ACL.allowAllRole(res0);
+    } catch (e) {
+        thrown = true;
+    }
+    notOk(thrown, 'Repeated addition of resource does not throw error');
+    thrown = false;
+    try {
+        ACL.allow(rol2, res2, 'CREATE');
+    } catch (e) {
+        thrown = true;
+    }
+    notOk(thrown, 'Repeated addition of role and resource does not throw error');
+});
+
+QUnit.test('Test Deny', function () {
+    var res0 = new Resource('ACO-ZZ'),
+        rol0 = new Role('ARO-ZZ'),
+        res1 = new Resource('ACO-A'),
+        rol1 = new Role('ARO-A'),
+        res2 = new Resource('ACO-B'),
+        rol2 = new Role('ARO-B'),
+        thrown = false;
+
+    //make default allow otherwise isDenied() will also return false
+    ACL.makeDefaultAllow();
+
+    notOk(ACL.isDenied(rol1, res1), 'Permission not set');
+    ACL.deny(rol1, res1);
+    ok(ACL.isDenied(rol1, res1), 'Role A denied access to Res A');
+
+    notOk(ACL.isDenied(rol0, res1), 'Permission not set');
+    notOk(ACL.isDenied(rol0, res2), 'Permission not set');
+    ACL.denyAllResource(rol0);
+    ok(ACL.isDenied(rol0, res1), 'Denied via all resource');
+    ok(ACL.isDenied(rol0, res2), 'Denied via all resource');
+    notOk(ACL.isDenied(rol1, res0), 'Permission not set');
+    notOk(ACL.isDenied(rol2, res0), 'Permission not set');
+    ACL.denyAllRole(res0);
+    ok(ACL.isDenied(rol1, res0), 'Denied via all role');
+    ok(ACL.isDenied(rol2, res0), 'Denied via all role');
+
+    notOk(ACL.isDenied(rol2, res2, 'CREATE'), 'Permission not set');
+    notOk(ACL.isDenied(rol2, res2, 'READ'), 'Permission not set');
+    ACL.deny(rol2, res2, 'CREATE');
+    ok(ACL.isDenied(rol2, res2, 'CREATE'), 'Role 2 denied CREATE access to Res 2');
+    notOk(ACL.isDenied(rol2, res2, 'READ'), 'Permission not set');
+
+    thrown = false;
+    try {
+        ACL.denyAllResource(rol0);
+    } catch (e) {
+        thrown = true;
+    }
+    notOk(thrown, 'Repeated addition of role does not throw error');
+});
+
+QUnit.test('Test Remove', function () {
+    var res1 = new Resource('reso-a'),
+        rol1 = new Role('role-a'),
+        res2 = new Resource('reso-b'),
+        rol2 = new Role('role-b'),
+        thrown = false;
+
+    //set to default allow to test deny()
+    ACL.makeDefaultAllow();
+    ACL.deny(rol2, res2, 'CREATE');
+
+    ok(ACL.isDenied(rol2, res2, 'CREATE'), 'Denied from above');
+    notOk(ACL.isDenied(rol2, res2), 'Default is allow');
+    ok(ACL.perms.has(rol2.getId() + '::' + res2.getId()), 'The permission entry is in the registry.');
+    ACL.remove(rol2, res2, 'CREATE');
+    notOk(ACL.isDenied(rol2, res2), 'No change');
+    notOk(ACL.perms.has(rol2.getId() + '::' + res2.getId()), 'The empty permission entry is removed from the registry.');
+
+
+    ACL.deny(rol1, res1);
+    ok(ACL.isDenied(rol1, res1, 'CREATE'), 'Denied set on ALL');
+    ok(ACL.isDenied(rol1, res1, 'READ'), 'Denied set on ALL');
+    ok(ACL.isDenied(rol1, res1, 'UPDATE'), 'Denied set on ALL');
+    ok(ACL.isDenied(rol1, res1, 'DELETE'), 'Denied set on ALL');
+    ok(ACL.isDenied(rol1, res1), 'Denied set on ALL');
+    ACL.remove(rol1, res1, 'CREATE');
+    notOk(ACL.isDenied(rol1, res1, 'CREATE'), 'CREATE DENY permission removed');
+    ok(ACL.isDenied(rol1, res1, 'READ'), 'Denied set on ALL');
+    ok(ACL.isDenied(rol1, res1, 'UPDATE'), 'Denied set on ALL');
+    ok(ACL.isDenied(rol1, res1, 'DELETE'), 'Denied set on ALL');
+    notOk(ACL.isDenied(rol1, res1), 'CREATE permission is different');
+    ACL.remove(rol1, res1);
+    notOk(ACL.isDenied(rol1, res1, 'CREATE'), 'DENY permission removed');
+    notOk(ACL.isDenied(rol1, res1, 'READ'), 'DENY permission removed');
+    notOk(ACL.isDenied(rol1, res1, 'UPDATE'), 'DENY permission removed');
+    notOk(ACL.isDenied(rol1, res1, 'DELETE'), 'DENY permission removed');
+    notOk(ACL.isDenied(rol1, res1), 'DENY permission removed');
+});
+
+QUnit.test('Test Hierarchy', function () {
+    var res1  = new Resource('RES1'),
+        res2  = new Resource('RES2'),
+        res3  = new Resource('RES3'),
+        res4  = new Resource('RES4'),
+        res1a = new Resource('RES1-a'),
+        res1b = new Resource('RES1-b'),
+        res1c = new Resource('RES1-c'),
+        res1a1= new Resource('RES1-a-1'),
+        res1a2= new Resource('RES1-a-2'),
+        res1b1= new Resource('RES1-b-1'),
+        res1c1= new Resource('RES1-c-1'),
+        rol1  = new Role('R1'),
+        rol2  = new Role('R2'),
+        rol3  = new Role('R3'),
+        rol4  = new Role('R4'),
+        rol1a = new Role('R1-a'),
+        rol1b = new Role('R1-b'),
+        rol1c = new Role('R1-c'),
+        rol1a1= new Role('R1-a-1'),
+        rol1a2= new Role('R1-a-2'),
+        rol1b1= new Role('R1-b-1');
+
+    //add RES1, RES2, RES1-a
+    ACL.addResource(res1);
+    ACL.addResource(res2);
+    ACL.addResource(res1a, res1);
+
+    ACL.addResource(res1b, res1);
+    ACL.addResource(res1c, res1);
+    ACL.addResource(res1a1, res1a);
+    ACL.addResource(res1a2, res1a);
+    ACL.addResource(res1b1, res1b);
+    ACL.addResource(res1c1, res1c);
+
+    //Add R1, R2, R1-a
+    ACL.addRole(rol1);
+    ACL.addRole(rol2);
+    ACL.addRole(rol1a,rol1);
+
+    ACL.addRole(rol1b, rol1);
+    ACL.addRole(rol1c, rol1);
+    ACL.addRole(rol1a1, rol1a);
+    ACL.addRole(rol1a2, rol1a);
+    ACL.addRole(rol1b1, rol1b);
+
+    ACL.makeDefaultDeny();
+    //grant ALL access to res1b
+    ACL.allowAllRole(res1b);
+    ACL.denyAllRole(res1c);
+
+    ACL.allow(rol1, res1);
+
+    //1-1
+    ok(ACL.isAllowed(rol1,  res1),      'R1 allow RES1');
+    ok(ACL.isAllowed(rol1,  res1a),     'RES1-a child of RES1');
+    ok(ACL.isAllowed(rol1,  res1a1),    'RES1-a-1 descendent of RES1');
+    ok(ACL.isAllowed(rol1,  res1a2),    'RES1-a-2 descendent of RES1');
+    ok(ACL.isAllowed(rol1,  res1b),     'RES1-b child of RES1');
+    ok(ACL.isAllowed(rol1,  res1b1),    'RES1-b-1 descendant of RES1');
+    //R1 allowed to RES1 - overrides * deny RES1-c
+    ok(ACL.isAllowed(rol1,  res1c),     'R1 allow to RES1 overrides * deny to RES1-c');
+    ok(ACL.isAllowed(rol1,  res1c1),    'R1 allow to RES1 overrides * deny to RES1-c');
+    //1-2
+    ok(ACL.isDenied(rol1,     res2),    'Default deny');
+    //1-3
+    ok(ACL.isDenied(rol1,     res3),    'Default deny');
+    //2-1
+    ok(ACL.isDenied(rol2,   res1),      'Default deny');
+    ok(ACL.isDenied(rol2,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol2,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol2,   res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol2,   res1b1),    'RES1-b-1 child of RES1-b');
+    //2-2 - R2::RES2 should be CREATE-true
+    ACL.allow(rol2, res2, 'CREATE');
+    notOk(ACL.isDenied(rol2,    res2),  'To mirror the Java test');
+    //2-3
+    ok(ACL.isDenied(rol2,   res3),      'Default deny');
+    //3-1
+    ok(ACL.isDenied(rol3,   res1),      'Default deny');
+    ok(ACL.isDenied(rol3,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol3,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol3,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol3,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol3,  res1b1),    'RES1-b-1 child of RES1-b');
+    //3-2
+    ok(ACL.isDenied(rol3,   res2),      'Default deny');
+    //3-3
+    ok(ACL.isDenied(rol3,   res3),      'Default deny');
+    //4-1
+    ok(ACL.isDenied(rol4,   res1),      'Default deny');
+    ok(ACL.isDenied(rol4,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol4,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol4,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol4,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol4,  res1b1),    'RES1-b-1 child of RES1-b');
+    ok(ACL.isDenied(rol4,   res1c),     'Default deny');
+    ok(ACL.isDenied(rol4,   res1c1),    'Default deny');
+
+    ACL.deny(rol1, res1a);
+
+    //1-1
+    ok(ACL.isAllowed(rol1,  res1),      'R1 allow RES1');
+    ok(ACL.isDenied(rol1,   res1a),     'R1 deny RES1-a');
+    ok(ACL.isDenied(rol1,   res1a1),    'RES1-a-1 descendent of RES1');
+    ok(ACL.isDenied(rol1,   res1a2),    'RES1-a-2 descendent of RES1');
+    ok(ACL.isAllowed(rol1,  res1b),     'RES1-b child of RES1');
+    ok(ACL.isAllowed(rol1,  res1b1),    'RES1-b-1 descendant of RES1');
+    //R1 allowed to RES1 - overrides * deny RES1-c
+    ok(ACL.isAllowed(rol1,  res1c),     'R1 allow to RES1 overrides * deny to RES1-c');
+    ok(ACL.isAllowed(rol1,  res1c1),    'R1 allow to RES1 overrides * deny to RES1-c');
+    //1-2
+    ok(ACL.isDenied(rol1,     res2), 'Default deny');
+    //1-3
+    ok(ACL.isDenied(rol1,     res3), 'Default deny');
+    //2-1
+    ok(ACL.isDenied(rol2,   res1),      'Default deny');
+    ok(ACL.isDenied(rol2,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol2,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol2,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol2,  res1b1),    'RES1-b-1 child of RES1-b');
+    //2-2 - R2::RES2 should be CREATE-true from above
+    notOk(ACL.isDenied(rol2,    res2),  'To mirror the Java test');
+    //2-3
+    ok(ACL.isDenied(rol2,   res3),      'Default deny');
+    //3-1
+    ok(ACL.isDenied(rol3,   res1),      'Default deny');
+    ok(ACL.isDenied(rol3,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol3,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol3,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol3,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol3,  res1b1),    'RES1-b-1 child of RES1-b');
+    //3-2
+    ok(ACL.isDenied(rol3,   res2),      'Default deny');
+    //3-3
+    ok(ACL.isDenied(rol3,   res3),      'Default deny');
+
+    ACL.allow(rol1, res1a1);
+
+    //1-1
+    ok(ACL.isAllowed(rol1,  res1),      'R1 allow RES1');
+    ok(ACL.isDenied(rol1,   res1a),     'R1 deny RES1-a');
+    ok(ACL.isAllowed(rol1,  res1a1),    'R1 allow RES1-a-1');
+    ok(ACL.isDenied(rol1,   res1a2),    'RES1-a-2 descendent of RES1-a');
+    ok(ACL.isAllowed(rol1,  res1b),     'RES1-b child of RES1');
+    ok(ACL.isAllowed(rol1,  res1b1),    'RES1-b-1 descendant of RES1');
+    //R1 allowed to RES1 - overrides * deny RES1-c
+    ok(ACL.isAllowed(rol1,  res1c),     'R1 allow to RES1 overrides * deny to RES1-c');
+    ok(ACL.isAllowed(rol1,  res1c1),    'R1 allow to RES1 overrides * deny to RES1-c');
+    //1-2
+    ok(ACL.isDenied(rol1,   res2),      'Default deny');
+    //1-3
+    ok(ACL.isDenied(rol1,   res3), 'Default deny');
+    //2-1
+    ok(ACL.isDenied(rol2,   res1),      'Default deny');
+    ok(ACL.isDenied(rol2,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol2,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol2,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol2,  res1b1),    'RES1-b-1 child of RES1-b');
+    //2-2 - R2::RES2 should be CREATE-true from above
+    notOk(ACL.isDenied(rol2,res2),  'To mirror the Java test');
+    //2-3
+    ok(ACL.isDenied(rol2,   res3),      'Default deny');
+    //3-1
+    ok(ACL.isDenied(rol3,   res1),      'Default deny');
+    ok(ACL.isDenied(rol3,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol3,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol3,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol3,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol3,  res1b1),    'RES1-b-1 child of RES1-b');
+    //3-2
+    ok(ACL.isDenied(rol3,   res2),      'Default deny');
+    //3-3
+    ok(ACL.isDenied(rol3,   res3),      'Default deny');
+
+    //deny R2 to RES1-b; test overriding of ALL allow
+    ACL.deny(rol2, res1b);
+
+    //1-1
+    ok(ACL.isAllowed(rol1,  res1),      'R1 allow RES1');
+    ok(ACL.isDenied(rol1,   res1a),     'R1 deny RES1-a');
+    ok(ACL.isAllowed(rol1,  res1a1),    'R1 allow RES1-a-1');
+    ok(ACL.isDenied(rol1,   res1a2),    'RES1-a-2 descendent of RES1-a');
+    ok(ACL.isAllowed(rol1,  res1b),     'RES1-b child of RES1');
+    ok(ACL.isAllowed(rol1,  res1b1),    'RES1-b-1 descendant of RES1');
+    //R1 allowed to RES1 - overrides * deny RES1-c
+    ok(ACL.isAllowed(rol1,  res1c),     'R1 allow to RES1 overrides * deny to RES1-c');
+    ok(ACL.isAllowed(rol1,  res1c1),    'R1 allow to RES1 overrides * deny to RES1-c');
+    //1-2
+    ok(ACL.isDenied(rol1,   res2),      'Default deny');
+    //1-3
+    ok(ACL.isDenied(rol1,   res3),      'Default deny');
+    //2-1
+    ok(ACL.isDenied(rol2,   res1),      'Default deny');
+    ok(ACL.isDenied(rol2,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol2,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1a2),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1b),     'R2 deny RES1-bb');
+    ok(ACL.isDenied(rol2,   res1b1),    'RES1-b-1 child of RES1-b');
+    //2-2 - R2::RES2 should be CREATE-true from above
+    notOk(ACL.isDenied(rol2,    res2),  'To mirror the Java test');
+    //2-3
+    ok(ACL.isDenied(rol2,   res3),      'Default deny');
+    //3-1
+    ok(ACL.isDenied(rol3,   res1),      'Default deny');
+    ok(ACL.isDenied(rol3,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol3,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol3,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol3,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol3,  res1b1),    'RES1-b-1 child of RES1-b');
+    //3-2
+    ok(ACL.isDenied(rol3,   res2),      'Default deny');
+    //3-3
+    ok(ACL.isDenied(rol3,   res3),      'Default deny');
+
+    //deny R3 o RES1-b-1; test specific deny over ALL allow
+    ACL.deny(rol3, res1b1);
+
+    //1-1
+    ok(ACL.isAllowed(rol1,  res1),      'R1 allow RES1');
+    ok(ACL.isDenied(rol1,   res1a),     'R1 deny RES1-a');
+    ok(ACL.isAllowed(rol1,  res1a1),    'R1 allow RES1-a-1');
+    ok(ACL.isDenied(rol1,   res1a2),    'RES1-a-2 descendent of RES1-a');
+    ok(ACL.isAllowed(rol1,  res1b),     'RES1-b child of RES1');
+    ok(ACL.isAllowed(rol1,  res1b1),    'RES1-b-1 descendant of RES1');
+    //R1 allowed to RES1 - overrides * deny RES1-c
+    ok(ACL.isAllowed(rol1,  res1c),     'R1 allow to RES1 overrides * deny to RES1-c');
+    ok(ACL.isAllowed(rol1,  res1c1),    'R1 allow to RES1 overrides * deny to RES1-c');
+    //1-2
+    ok(ACL.isDenied(rol1,   res2),      'Default deny');
+    //1-3
+    ok(ACL.isDenied(rol1,   res3),      'Default deny');
+    //2-1
+    ok(ACL.isDenied(rol2,   res1),      'Default deny');
+    ok(ACL.isDenied(rol2,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol2,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1a2),    'Default deny');
+    ok(ACL.isDenied(rol2,   res1b),     'R2 deny RES1-bb');
+    ok(ACL.isDenied(rol2,   res1b1),    'RES1-b-1 child of RES1-b');
+    //2-2 - R2::RES2 should be CREATE-true from above
+    notOk(ACL.isDenied(rol2,    res2),  'To mirror the Java test');
+    //2-3
+    ok(ACL.isDenied(rol2,   res3),      'Default deny');
+    //3-1
+    ok(ACL.isDenied(rol3,   res1),      'Default deny');
+    ok(ACL.isDenied(rol3,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol3,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol3,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol3,  res1b),     'All access to RES1-b');
+    ok(ACL.isDenied(rol3,   res1b1),    'RES1-b-1 child of RES1-b');
+    //3-2
+    ok(ACL.isDenied(rol3,   res2),      'Default deny');
+    //3-3
+    ok(ACL.isDenied(rol3,   res3),      'Default deny');
+
+    //test coverage
+    ACL.allow(rol4, res1c);
+    //4-1
+    ok(ACL.isDenied(rol4,   res1),      'Default deny');
+    ok(ACL.isDenied(rol4,   res1a),     'Default deny');
+    ok(ACL.isDenied(rol4,   res1a1),    'Default deny');
+    ok(ACL.isDenied(rol4,   res1a2),    'Default deny');
+    ok(ACL.isAllowed(rol4,  res1b),     'All access to RES1-b');
+    ok(ACL.isAllowed(rol4,  res1b1),    'All access to RES1-b');
+    ok(ACL.isAllowed(rol4,  res1c),     'R4 allow to RES1-c');
+    ok(ACL.isAllowed(rol4,  res1c1),    'RES1-c-1 child of RES1-c');
+    ok(ACL.isDenied(rol4,   res4),      'Default deny');
+    ACL.allow(rol4, res4);
+    ok(ACL.isAllowed(rol4,  res4),      'Default deny');
+});
+
+QUnit.test('Test Remove NULL', function () {
+    var rolna = new Role('NA-ROLE'),
+        resna = new Resource('NA-RES'),
+        nullrol = null,
+        nullres = null,
+        thrown = false;
+
+    notOk(ACL.isAllowed(rolna, resna), 'Default deny');
+    ok(ACL.isDenied(rolna, resna), 'Default deny');
+
+    ACL.remove(nullrol, nullres);
+
+    notOk(ACL.isAllowed(rolna, resna), 'False because the root is removed');
+    notOk(ACL.isDenied(rolna, resna),  'False because the root is removed');
+
+    try {
+        ACL.remove(nullrol, nullres, 'CREATE');
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown);
+});
+</script>
+</body>
+</html>

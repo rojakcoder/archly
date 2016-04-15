@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016-04-15
+
+Added the JavaScript implementation.
+
 ## 2016-04-14
 
 Moved the entire codebase into the `java` directory.
