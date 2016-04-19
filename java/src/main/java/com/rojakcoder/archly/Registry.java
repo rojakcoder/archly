@@ -198,21 +198,24 @@ class Registry {
 	 * @param entry The ID of the entry to remove from the registry.
 	 * @param removeDescendants If true, all child entries and descendants are
 	 * removed as well.
+	 * @return The list of entry IDs that are removed.
 	 * @throws NotFoundException Throws this exception if the entry or any of
 	 * the descendants (if {@code removeDscendants} is true} are not found.
 	 */
-	void remove(String entry, boolean removeDescendants)
+	List<String> remove(String entry, boolean removeDescendants)
 			throws EntryNotFoundException {
 		if (!registry.containsKey(entry)) {
 			throw new EntryNotFoundException(String.format(NOT_FOUND, entry));
 		}
+
+		List<String> removed = new ArrayList<>();
 
 		if (hasChild(entry)) {
 			String parentId = registry.get(entry);
 			List<String> childIds = findChildren(entry);
 
 			if (removeDescendants) {
-				this.removeDescendants(childIds);
+				removed.addAll(this.removeDescendants(childIds));
 			} else {
 				for (String childId: childIds) {
 					registry.put(childId, parentId);
@@ -221,6 +224,9 @@ class Registry {
 		}
 
 		registry.remove(entry);
+		removed.add(entry);
+
+		return removed;
 	}
 
 	/**
@@ -260,15 +266,20 @@ class Registry {
 		return sb.toString();
 	}
 
-	private void removeDescendants(List<String> entryIds) {
+	private List<String> removeDescendants(List<String> entryIds) {
+		List<String> removed = new ArrayList<>();
+
 		for (String entryId: entryIds) {
 			String node = entryId;
 
 			registry.remove(node);
+			removed.add(node);
 			while (hasChild(node)) {
-				removeDescendants(findChildren(node));
+				removed.addAll(removeDescendants(findChildren(node)));
 			}
 		}
+
+		return removed;
 	}
 
 	private List<String> findChildren(String parentId) {

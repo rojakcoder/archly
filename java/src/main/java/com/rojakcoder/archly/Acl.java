@@ -468,6 +468,92 @@ public class Acl {
 
 		perms.remove(rol, res, actionType);
 	}
+
+	/**
+	 * Removes a resource and its permissions.
+	 * <p>
+	 * Any permissions applicable to the resource are also removed. If the
+	 * descendants are to be removed as well, the corresponding permissions are
+	 * removed too.
+	 * </p>
+	 *
+	 * @param resource The resource to remove.
+	 * @param removeDescendants If true, all descendant resources of this
+	 * resource are also removed.
+	 */
+	public void removeResource(AclEntry resource, boolean removeDescendants) {
+		if (resource == null) {
+			throw new RuntimeException("Cannot remove null resource");
+		}
+
+		removeResource(resource.getId(), removeDescendants);
+	}
+
+	/**
+	 * Removes a resource and its permissions.
+	 * <p>
+	 * Any permissions applicable to the resource are also removed. If the
+	 * descendants are to be removed as well, the corresponding permissions are
+	 * removed too.
+	 * </p>
+	 *
+	 * @param resourceId The ID of the resource to remove.
+	 * @param removeDescendants If true, all descendant resources of this
+	 * resource also removed.
+	 */
+	public void removeResource(String resourceId, boolean removeDescendants) {
+		if (resourceId == null) {
+			throw new RuntimeException("Cannot remove null resource");
+		}
+
+		List<String> res = this.resources.remove(resourceId, removeDescendants);
+		for (String r: res) {
+			this.perms.removeByResource(r);
+		}
+	}
+
+	/**
+	 * Removes a role and its permissions.
+	 * <p>
+	 * Any permissions applicable to the role are also removed. If the
+	 * descendants are to be removed as well, the corresponding permissions are
+	 * removed too.
+	 * </p>
+	 *
+	 * @param role The role to remove.
+	 * @param removeDescendants If true, all descendant resources of this
+	 * resource are also removed.
+	 */
+	public void removeRole(AclEntry role, boolean removeDescendants) {
+		if (role == null) {
+			throw new RuntimeException("Cannot remove null role");
+		}
+
+		removeRole(role.getId(), removeDescendants);
+	}
+
+	/**
+	 * Removes a role and its permissions.
+	 * <p>
+	 * Any permissions applicable to the role are also removed. If the
+	 * descendants are to be removed as well, the corresponding permissions are
+	 * removed too.
+	 * </p>
+	 *
+	 * @param roleId The ID of the role to remove.
+	 * @param removeDescendants If true, all descendant resources of this
+	 * resource are also removed.
+	 */
+	public void removeRole(String roleId, boolean removeDescendants) {
+		if (roleId == null) {
+			throw new RuntimeException("Cannot remove null role");
+		}
+
+		List<String> rol = this.roles.remove(roleId, removeDescendants);
+		for (String r: rol) {
+			this.perms.removeByRole(r);
+		}
+	}
 }
 
 final class RootEntry implements AclEntry {

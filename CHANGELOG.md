@@ -1,5 +1,13 @@
 # Change Log
 
+## 2016-04-19
+
+### Added
+- Added methods removeByResource() and removeByRole() for both
+JavaScript and Java implementations.
+- Added a test for concurernt modifications on permissions for
+removeByResource()/removeByRole()
+
 ## 2016-04-15
 
 Added the JavaScript implementation.

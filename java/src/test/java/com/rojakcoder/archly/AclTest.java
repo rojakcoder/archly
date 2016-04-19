@@ -30,6 +30,7 @@ public class AclTest {
 		testRemove();
 		testHierarchy();
 		testRemoveNull();
+		testRemoveResourceRole();
 	}
 
 	@Test(priority = 49)
@@ -48,7 +49,7 @@ public class AclTest {
 		Assert.assertFalse(acl.isDenied(nulle, nulle, "ALL"));
 	}
 
-	public void testResource() {
+	private void testResource() {
 		Res res1 = new Res("ACO-1");
 		Res res1a = new Res("ACO-1-A");
 		boolean thrown = false;
@@ -78,7 +79,7 @@ public class AclTest {
 		Assert.assertTrue(thrown);
 	}
 
-	public void testRole() {
+	private void testRole() {
 		Rol rol1 = new Rol("ARO-1");
 		Rol rol1a = new Rol("ARO-1-A");
 		boolean thrown = false;
@@ -108,7 +109,7 @@ public class AclTest {
 		Assert.assertTrue(thrown);
 	}
 
-	public void testAllow() {
+	private void testAllow() {
 		Res res0 = new Res("ACO-0");
 		Rol rol0 = new Rol("ARO-0");
 		Res res1 = new Res("ACO-1");
@@ -146,7 +147,7 @@ public class AclTest {
 		acl.allow(rol2, res2, "CREATE");
 	}
 
-	public void testDeny() {
+	private void testDeny() {
 		Res res0 = new Res("ACO-ZZ");
 		Rol rol0 = new Rol("ARO-ZZ");
 		Res res1 = new Res("ACO-A");
@@ -186,7 +187,7 @@ public class AclTest {
 
 	}
 
-	public void testRemove() {
+	private void testRemove() {
 		Res res1 = new Res("ACO-A");
 		Rol rol1 = new Rol("ARO-A");
 		Res res2 = new Res("ACO-B");
@@ -221,7 +222,7 @@ public class AclTest {
 		Assert.assertFalse(acl.isDenied(rol1, res1));
 	}
 
-	public void testHierarchy() {
+	private void testHierarchy() {
 		Res res1 = new Res("ACO-1");
 		Res res2 = new Res("ACO-2");
 		Res res3 = new Res("ACO-3");
@@ -491,7 +492,7 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol4, res4));
 	}
 
-	public void testRemoveNull() {
+	private void testRemoveNull() {
 		Rol rolna = new Rol("NA-ROLE");
 		Res resna = new Res("NA-RES");
 		Rol nullrol = null;
@@ -511,6 +512,132 @@ public class AclTest {
 			//removing null again should throw exception
 			acl.remove(nullrol, nullres, "CREATE");
 		} catch (EntryNotFoundException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+	}
+
+	private void testRemoveResourceRole() {
+		String[] rols = {
+			"R1", "R2", "R3", "R4"
+		};
+		String[] ress = {
+			"C1", "C2", "C3", "C4"
+		};
+		Permission p = Permission.getSingleton();
+		ResourceRegistry regRes = ResourceRegistry.getSingleton();
+		RoleRegistry regRole = RoleRegistry.getSingleton();
+
+		acl.clear();
+		//create mappings for each key pair
+		for (String c: ress) {
+			for (String r: rols) {
+				acl.allow(new Rol(r), new Res(c));
+				Assert.assertTrue(acl.isAllowed(new Rol(r), new Res(c)));
+			}
+		}
+		//add children to both resources and roles
+		for (int i = 1; i <= 4; i++) {
+			acl.addResource(new Res("CC" + i), new Res("C" + i));
+			acl.addRole(new Rol("RC" + i), new Rol("R" + i));
+		}
+		//assign permission for child1 to child2
+		acl.allow(new Rol("RC1"), new Res("CC2"));
+		acl.allow(new Rol("RC2"), new Res("CC1"));
+
+		//add ALL access
+		for (String c: ress) {
+			acl.allowAllRole(new Res(c));
+			Assert.assertTrue(acl.isAllowed(new Rol("*"), new Res(c)));
+		}
+		for (String r: rols) {
+			acl.allowAllResource(new Rol(r));
+			Assert.assertTrue(acl.isAllowed(new Rol(r), new Res("*")));
+		}
+		//4x4 pairs, 2x4 ALL access, 1 child each
+		Assert.assertEquals(p.size(), 26); //4x4+4+4+1+1
+		Assert.assertEquals(regRes.size(), 8); //4+4
+		Assert.assertEquals(regRole.size(), 8); //4+4
+
+		//remove all access on C4
+		acl.removeResource(new Res("C4"), false);
+		Assert.assertEquals(p.size(), 21); //4x3+4+3+1+1
+		Assert.assertEquals(regRes.size(), 7); //3+4, less C4 but not its child
+		Assert.assertEquals(regRole.size(), 8); //4+4
+
+		//remove all access on R4
+		acl.removeRole(new Rol("R4"), false);
+		Assert.assertEquals(p.size(), 17); //3x3+3+3+1+1
+		Assert.assertEquals(regRes.size(), 7); //3+4
+		Assert.assertEquals(regRole.size(), 7); //3+4, less R4 but not its child
+
+		//remove all access on C3 and child
+		acl.removeResource(new Res("C3"), true);
+		Assert.assertEquals(p.size(), 13); //3x2+3+2+1+1
+		Assert.assertEquals(regRes.size(), 5); //2+3, less C3 and child
+		Assert.assertEquals(regRole.size(), 7); //3+4
+
+		//remove all access on R3 and child
+		acl.removeRole(new Rol("R3"), true);
+		Assert.assertEquals(p.size(), 10); //2x2+2+2+1+1
+		Assert.assertEquals(regRes.size(), 5); //2+3
+		Assert.assertEquals(regRole.size(), 5); //2+3, less R3 and child
+
+		//remove all access on C2 and child
+		acl.removeResource(new Res("C2"), true);
+		Assert.assertEquals(p.size(), 6); //2x1+2+1+1+0, less child permission
+		Assert.assertEquals(regRes.size(), 3); //1+2, less C2 and child
+		Assert.assertEquals(regRole.size(), 5); //2+3
+
+		//remove all access on R2 and child
+		acl.removeRole(new Rol("R2"), true);
+		Assert.assertEquals(p.size(), 3); //1x1+1+1+0+0, less child permission
+		Assert.assertEquals(regRes.size(), 3); //1+2
+		Assert.assertEquals(regRole.size(), 3); //1+2, less R2 and child
+
+		//remove all access on C1 and child
+		acl.removeResource(new Res("C1"), true);
+		Assert.assertEquals(p.size(), 1); //1x0+1+0+0+0
+		Assert.assertEquals(regRes.size(), 1); //0+1
+		Assert.assertEquals(regRole.size(), 3); //1+2
+
+		//remove all access on R1 and child
+		acl.removeRole(new Rol("R1"), true);
+		Assert.assertEquals(p.size(), 0); //0x0+0+0+0+0
+		Assert.assertEquals(regRes.size(), 1); //0+1
+		Assert.assertEquals(regRole.size(), 1); //0+1
+
+		//test coverage
+		AclEntry nullEntry = null;
+		String nullString = null;
+		boolean thrown = false;
+		try {
+			acl.removeResource(nullEntry, false);
+		} catch (RuntimeException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+
+		thrown = false;
+		try {
+			acl.removeRole(nullEntry, false);
+		} catch (RuntimeException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+
+		thrown = false;
+		try {
+			acl.removeResource(nullString, false);
+		} catch (RuntimeException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+
+		thrown = false;
+		try {
+			acl.removeRole(nullString, false);
+		} catch (RuntimeException e) {
 			thrown = true;
 		}
 		Assert.assertTrue(thrown);

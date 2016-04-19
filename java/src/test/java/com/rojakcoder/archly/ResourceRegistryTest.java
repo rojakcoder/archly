@@ -1,5 +1,7 @@
 package com.rojakcoder.archly;
 
+import java.util.List;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -45,8 +47,9 @@ public class ResourceRegistryTest {
 		}
 		Assert.assertTrue(thrown);
 
-		reg.remove(u1, false);
+		List<String> removed = reg.remove(u1, false);
 		Assert.assertEquals(reg.size(), 1);
+		Assert.assertEquals(removed.size(), 1);
 
 		//add RES-1 back
 		reg.add(u1);
@@ -90,14 +93,18 @@ public class ResourceRegistryTest {
 		Assert.assertEquals(reg.size(), 8);
 
 		//remove u2 and all descendants
-		reg.remove(u2, true);
+		List<String> removed = reg.remove(u2, true);
 		Assert.assertEquals(reg.size(), 4);
+		Assert.assertEquals(removed.size(), 4);
 
 		//remove u1b and expect u1b1 to be under u1
-		reg.remove(u1b, false);
+		removed = reg.remove(u1b, false);
 		Assert.assertEquals(reg.size(), 3);
 		Assert.assertTrue(reg.has(u1b1));
 		Assert.assertTrue(reg.hasChild(u1));
+		Assert.assertEquals(removed.size(), 1);
+		//same element
+		Assert.assertEquals(removed.get(0), u1b);
 
 		//remove u1b1 and u1a, and expect u1 to be childless
 		reg.remove(u1b1, false);

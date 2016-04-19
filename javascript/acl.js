@@ -19,6 +19,20 @@
         this.makeDefaultDeny();
     }
 
+    function remove(perms, keys) {
+        var i,
+            removed = 0;
+
+        for (i = 0; i < keys.length; i++) {
+            if (perms.hasOwnProperty(keys[i])) {
+                delete perms[keys[i]];
+                removed++;
+            }
+        }
+
+        return removed;
+    }
+
     Permission.DEFAULT_KEY = '*::*';
 
     Permission.Types = {
@@ -256,6 +270,38 @@
         }
     };
 
+    Permission.prototype.removeByResource = function (resourceId) {
+        var key,
+            toRemove = [],
+            resId = '::' + resourceId;
+
+        for (key in this.perms) {
+            if (this.perms.hasOwnProperty(key)) {
+                if (key.endsWith(resId)) {
+                    toRemove.push(key);
+                }
+            }
+        }
+
+        return remove(this.perms, toRemove);
+    };
+
+    Permission.prototype.removeByRole = function (roleId) {
+        var key,
+            toRemove = [],
+            rolId = roleId + '::';
+
+        for (key in this.perms) {
+            if (this.perms.hasOwnProperty(key)) {
+                if (key.startsWith(rolId)) {
+                    toRemove.push(key);
+                }
+            }
+        }
+
+        return remove(this.perms, toRemove);
+    };
+
     Permission.prototype.size = function () {
         return Object.keys(this.perms).length;
     };
@@ -474,10 +520,11 @@
     Registry.prototype.remove = function (entry, removeDescendants) {
         var parentId,
             childIds = [],
-            reg = this.registry;
+            reg = this.registry,
+            removed = [];
 
         if (!this.has(entry)) {
-            throw new Error(ENTRY_NOT_FOUND.replace(/_entry_/g, entry.getId()));
+            throw new Error(ENTRY_NOT_FOUND.replace(/_entry_/g, entry));
         }
 
         if (this.hasChild(entry)) {
@@ -485,7 +532,7 @@
             childIds = findChildren(this.registry, entry);
 
             if (removeDescendants) {
-                remDescendants(this, childIds);
+                removed = removed.concat(remDescendants(this, childIds));
             } else {
                 childIds.forEach(function(childId) {
                     reg[childId] = parentId;
@@ -494,6 +541,9 @@
         }
 
         delete this.registry[entry];
+        removed.push(entry);
+
+        return removed;
     };
 
     Registry.prototype.size = function () {
@@ -527,13 +577,18 @@
     };
 
     function remDescendants(reg, entryIds) {
+        var removed = [];
+
         entryIds.forEach(function (entryId) {
             //registry.remove(entryId);
             delete reg.registry[entryId];
+            removed.push(entryId);
             while (reg.hasChild(entryId)) {
-                remDescendants(reg, findChildren(reg.registry, entryId));
+                removed = removed.concat(remDescendants(reg, findChildren(reg.registry, entryId)));
             }
         });
+
+        return removed;
     }
 
     function findChildren(registry, parentId) {
@@ -779,6 +834,32 @@
 
     Acl.prototype.remove = function (role, resource, action) {
         this.perms.remove(getValue(role), getValue(resource), action);
+    };
+
+    Acl.prototype.removeResource = function (resource, removeDescendants) {
+        var i, resources,
+            resId = getValue(resource);
+
+        if (resId === null) {
+            throw new Error('Cannot remove null resource');
+        }
+        resources = this.resources.remove(resId, removeDescendants);
+        for (i = 0; i < resources.length; i++) {
+            this.perms.removeByResource(resources[i]);
+        }
+    };
+
+    Acl.prototype.removeRole = function (role, removeDescendants) {
+        var i, roles,
+            roleId = getValue(role);
+
+        if (roleId === null) {
+            throw new Error('Cannot remove null role');
+        }
+        roles = this.roles.remove(roleId, removeDescendants);
+        for (i = 0; i < roles.length; i++) {
+            this.perms.removeByRole(roles[i]);
+        }
     };
 
 //    win.Archly = {

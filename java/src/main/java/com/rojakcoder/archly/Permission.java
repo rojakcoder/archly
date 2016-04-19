@@ -1,7 +1,9 @@
 package com.rojakcoder.archly;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -14,6 +16,11 @@ import com.rojakcoder.archly.exceptions.EntryNotFoundException;
  * </p>
  */
 class Permission {
+	/**
+	 * A flag for testing purposes.
+	 */
+	static boolean RUNTEST = false;
+
 	private static final String NOT_FOUND = "Permission %s not found on %s for %s";
 
 	private static final String DEFAULT_KEY = "*::*";
@@ -58,9 +65,11 @@ class Permission {
 		sb.append(permissions.size());
 		sb.append("\n-------\n");
 
+		int i = 0;
 		for (Map.Entry<String, Map<String, Boolean>> entry: permissions
 				.entrySet()) {
-			sb.append("- ");
+			i++;
+			sb.append(i + "- ");
 			sb.append(entry.getKey());
 			sb.append("\n");
 			for (Map.Entry<String, Boolean> e: entry.getValue().entrySet()) {
@@ -404,12 +413,72 @@ class Permission {
 	}
 
 	/**
+	 * Removes all permissions related to the resource.
+	 *
+	 * @param resource The ID of the resource to remove.
+	 * @return The number of removed permissions. This number may be different
+	 * from what is expected due to the concurrent nature of the permission map.
+	 */
+	int removeByResource(String resource) {
+		Set<String> toRemove = new HashSet<>();
+		resource = "::" + resource;
+
+		for (String key: permissions.keySet()) {
+			if (key.endsWith(resource)) {
+				toRemove.add(key);
+			}
+		}
+
+		return del(toRemove);
+	}
+
+	/**
+	 * Removes all permissions related to the role.
+	 *
+	 * @param role The ID of the role to remove.
+	 * @return The number of removed permissions. This number may be different
+	 * from what is expected due to the concurrent nature of the permission map.
+	 */
+	int removeByRole(String role) {
+		Set<String> toRemove = new HashSet<>();
+		role += "::";
+
+		for (String key: permissions.keySet()) {
+			if (key.startsWith(role)) {
+				toRemove.add(key);
+			}
+		}
+
+		return del(toRemove);
+	}
+
+	/**
 	 * The number of specified permissions.
 	 *
 	 * @return The number of permissions in the registry.
 	 */
 	int size() {
 		return permissions.size();
+	}
+
+	private int del(Set<String> keys) {
+		int removed = 0;
+		if (RUNTEST) {
+			System.out.println("Expecting to remove " + keys.size());
+		}
+		for (String key: keys) {
+			if (permissions.remove(key) != null) {
+				removed++;
+			}
+			if (RUNTEST) {
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+				}
+			} //else do nothing
+		}
+
+		return removed;
 	}
 
 	private String makeKey(String aro, String aco) {
