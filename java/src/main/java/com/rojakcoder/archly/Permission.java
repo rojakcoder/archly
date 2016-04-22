@@ -172,13 +172,22 @@ class Permission {
 	}
 
 	/**
-	 * Determines if the role-resource tuple is available.
+	 * Exports a snapshot of the permissions map.
 	 *
-	 * @param key The tuple of role and resource.
-	 * @return Returns true if the permission is available for this tuple.
+	 * @return A map with string keys and map values where the values are maps
+	 * of string to boolean entries. Typically meant for persistent storage.
 	 */
-	private boolean has(String key) {
-		return permissions.containsKey(key);
+	Map<String, Map<String, Boolean>> export() {
+		return new HashMap<String, Map<String, Boolean>>(permissions);
+	}
+
+	/**
+	 * Re-creates the permission map with a new of permissions.
+	 *
+	 * @param map The map containing the new permissions.
+	 */
+	void importMap(Map<String, Map<String, Boolean>> map) {
+		this.permissions = new ConcurrentHashMap<>(map);
 	}
 
 	/**
@@ -479,6 +488,16 @@ class Permission {
 		}
 
 		return removed;
+	}
+
+	/**
+	 * Determines if the role-resource tuple is available.
+	 *
+	 * @param key The tuple of role and resource.
+	 * @return Returns true if the permission is available for this tuple.
+	 */
+	private boolean has(String key) {
+		return permissions.containsKey(key);
 	}
 
 	private String makeKey(String aro, String aco) {

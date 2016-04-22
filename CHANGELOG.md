@@ -1,5 +1,10 @@
 # Change Log
 
+## 2016-04-21
+
+### Added
+- Added methods for exporting and importing permissions.
+
 ## 2016-04-19
 
 ### Added

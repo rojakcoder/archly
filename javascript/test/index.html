@@ -1394,6 +1394,115 @@ QUnit.test('Test Remove Resource/Role', function () {
     }
     ok(thrown);
 });
+
+QUnit.test('Test Export/Import', function () {
+    //test export
+    var resources = ACL.exportResources();
+    var roles = ACL.exportRoles();
+    var perms = ACL.exportPermissions();
+
+    //verify that the exported data are snapshots
+    ACL.addResource('laser-gun');
+    ACL.addRole('jedi');
+    ACL.deny('jedi', 'laser-gun');
+
+    var newRes = ACL.exportResources();
+    var newRoles = ACL.exportRoles();
+    var newPerms = ACL.exportPermissions();
+
+    ok(Object.keys(newRes).length > Object.keys(resources).length, 'Exported resources is unaffected');
+    ok(Object.keys(newRoles).length > Object.keys(roles).length, 'Exported roles is unaffected');
+    ok(Object.keys(newPerms).length > Object.keys(perms).length, 'Exported permissions is unaffected');
+
+    //simulate saved data
+    newRes = {
+        'laser-gun': '',
+        'light-sabre': '',
+        'staff': 'light-sabre',
+        't': 'light-sabre'
+    };
+    newRoles = {
+        'jedi': '',
+        'sith': '',
+        'obiwan': 'jedi',
+        'luke': 'jedi',
+        'darth-vader': 'sith',
+        'darth-maul': 'sith'
+    };
+    newPerms = {
+        '*::*': { ALL: false },
+        'jedi::light-sabre':    { ALL: true },
+        'jedi::laser-gun':      { ALL: false },
+        'sith::light-sabre':    { ALL: true },
+        'sith::laser-gun':      { ALL: true },
+        'luke::laser-gun':      { ALL: true },
+        'jedi::t':              { ALL: false }
+    };
+
+    //test import
+    var thrown = false;
+    try {
+        ACL.importResources(newRes);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown, 'Resources are non-empty');
+    thrown = false;
+    try {
+        ACL.importRoles(newRoles);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown, 'Roles are non-empty');
+    thrown = false;
+    try {
+        ACL.importPermissions(newPerms);
+    } catch (e) {
+        thrown = true;
+    }
+    ok(thrown, 'Permissions are non-empty');
+
+    ACL.clear();
+    ACL.importResources(newRes);
+    ACL.importRoles(newRoles);
+    ACL.importPermissions(newPerms);
+
+    //verify that the permissions are correct
+    ok(ACL.isAllowed('jedi',        'light-sabre'));
+    ok(ACL.isDenied('jedi',         'laser-gun'));
+    ok(ACL.isAllowed('luke',        'laser-gun'));
+    ok(ACL.isAllowed('sith',        'laser-gun'));
+    ok(ACL.isDenied('jedi',         't'));
+
+    //change permission
+    ACL.deny('sith', 'laser-gun');
+    //add resource, role and permission
+    ACL.addResource('double', 'light-sabre');
+    ACL.addRole('anakin', 'jedi');
+    ACL.allow('jedi', 'double', 'UPDATE');
+
+    //verify permissions are correct
+    ok(ACL.isAllowed('jedi', 'double'), 'True because UPDATE on doule is redundant.');
+    ok(ACL.isAllowed('jedi', 'double', 'UPDATE'), 'True because UPDATE on double is redundant.');
+
+    //change double to be not redundant
+    ACL.deny('jedi', 'double', 'CREATE');
+
+    notOk(ACL.isAllowed('jedi', 'double'), 'False because jedi::double DENY CREATE.');
+    ok(ACL.isAllowed('jedi', 'double', 'UPDATE'), 'Still true.');
+    ok(ACL.isDenied('luke', 'double', 'CREATE'), 'True because inherits jedi.');
+    ok(ACL.isDenied('sith', 'laser-gun'));
+    ok(ACL.isDenied('jedi', 't'));
+
+    resources = ACL.exportResources();
+    roles = ACL.exportRoles();
+    perms = ACL.exportPermissions();
+
+    //verify that the maps are disconnected
+    ok(Object.keys(newRes).length < Object.keys(resources).length, 'Exported resources is unaffected');
+    ok(Object.keys(newRoles).length < Object.keys(roles).length, 'Exported roles is unaffected');
+    ok(Object.keys(newPerms).length < Object.keys(perms).length, 'Exported permissions is unaffected');
+});
 </script>
 </body>
 </html>

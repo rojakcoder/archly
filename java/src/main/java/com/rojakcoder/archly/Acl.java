@@ -242,6 +242,15 @@ public class Acl {
 	}
 
 	/**
+	 * Exports a snapshot of the permissions map.
+	 *
+	 * @return A String to String-Boolean map typically for persistent storage.
+	 */
+	public Map<String, Map<String, Boolean>> exportPermissions() {
+		return this.perms.export();
+	}
+
+	/**
 	 * Exports a snapshot of the resources registry.
 	 *
 	 * @return A HashMap typically meant for persistent storage.
@@ -257,6 +266,18 @@ public class Acl {
 	 */
 	public Map<String, String> exportRoles() {
 		return this.roles.export();
+	}
+
+	/**
+	 * Imports a new set of permissions.
+	 *
+	 * @param map The map containing the permissions.
+	 */
+	public void importPermissions(Map<String, Map<String, Boolean>> map) {
+		if (this.perms.size() != 0) {
+			throw new NonEmptyException(String.format(NON_EMPTY, "Permissions"));
+		}
+		this.perms.importMap(map);
 	}
 
 	/**

@@ -103,8 +103,41 @@
         }
     };
 
+    Permission.prototype.export = function () {
+        var i, j, clone = {};
+
+        for (i in this.perms) {
+            if (this.perms.hasOwnProperty(i)) {
+                clone[i] = {};
+                for (j in this.perms[i]) {
+                    if (this.perms[i].hasOwnProperty(j)) {
+                        clone[i][j] = this.perms[i][j];
+                    }
+                }
+            }
+        }
+
+        return clone;
+    };
+
     Permission.prototype.has = function (key) {
         return !!this.perms[key];
+    };
+
+    Permission.prototype.importMap = function (map) {
+        var i, j;
+
+        this.perms = {};
+        for (i in map) {
+            if (map.hasOwnProperty(i)) {
+                this.perms[i] = {};
+                for (j in map[i]) {
+                    if (map[i].hasOwnProperty(j)) {
+                        this.perms[i][j] = map[i][j];
+                    }
+                }
+            }
+        }
     };
 
     Permission.prototype.isAllowedAll = function (role, resource) {
@@ -656,20 +689,6 @@
         this.perms.allow('*', resValue);
     }
 
-//    Acl.prototype.allow = function (role, resource) {
-//        try {
-//            this.roles.add(role);
-//        } catch (e) {
-//            //do nothing
-//        }
-//        try {
-//            this.resources.add(resource);
-//        } catch (e) {
-//            //do nothing
-//        }
-//        this.perms.allow(role, resource);
-//    }
-//
     Acl.prototype.allow = function (role, resource, action) {
         var resValue = getValue(resource),
             roleValue = getValue(role);
@@ -732,6 +751,10 @@
         this.perms.deny(roleValue, resValue, action);
     };
 
+    Acl.prototype.exportPermissions = function () {
+        return this.perms.export();
+    };
+
     Acl.prototype.exportResources = function () {
         return this.resources.export();
     };
@@ -740,15 +763,22 @@
         return this.roles.export();
     };
 
+    Acl.prototype.importPermissions = function (permissions) {
+        if (this.perms.size() !== 0) {
+            throw new Error(NON_EMPTY.replace(/_reg_/, 'permissions'));
+        }
+        this.perms.importMap(permissions);
+    };
+
     Acl.prototype.importResources = function (resources) {
-        if (this.resources.size() != 0) {
+        if (this.resources.size() !== 0) {
             throw new Error(NON_EMPTY.replace(/_reg_/g, 'resources'));
         }
         this.resources.importRegistry(resources);
     };
 
     Acl.prototype.importRoles = function (roles) {
-        if (this.roles.size() != 0) {
+        if (this.roles.size() !== 0) {
             throw new Error(NON_EMPTY.replace(/_reg_/g, 'roles'));
         }
         this.roles.importRegistry(roles);

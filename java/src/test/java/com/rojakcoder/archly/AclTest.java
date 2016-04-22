@@ -643,6 +643,141 @@ public class AclTest {
 		Assert.assertTrue(thrown);
 	}
 
+	@Test(priority = 48)
+	public void testExportImport() {
+		//test export
+		Map<String, String> resources = acl.exportResources();
+		Map<String, String> roles = acl.exportRoles();
+		Map<String, Map<String, Boolean>> perms = acl.exportPermissions();
+
+		Assert.assertTrue(resources.size() > 0, "Existing resources");
+		Assert.assertTrue(roles.size() > 0, "Existing roles");
+		Assert.assertTrue(perms.size() > 0, "Existing permissions");
+
+		//verify that the exported ones are indeed snapshots
+		acl.addResource(new Resource("laser-gun"));
+		acl.addRole(new Role("jedi"));
+		acl.deny(new Role("jedi"), new Resource("laser-gun"));
+
+		Map<String, String> newRes = acl.exportResources();
+		Map<String, String> newRoles = acl.exportRoles();
+		Map<String, Map<String, Boolean>> newPerms = acl.exportPermissions();
+
+		Assert.assertTrue(newRes.size() > resources.size(),
+				"Exported resources are not affected");
+		Assert.assertTrue(newRoles.size() > roles.size(),
+				"Exported roles are not affected");
+		Assert.assertTrue(newPerms.size() > perms.size(),
+				"Exported permissions are not affected");
+
+		//simulate saved data
+		newRes = new HashMap<String, String>();
+		newRes.put("laser-gun", "");
+		newRes.put("light-sabre", "");
+		newRes.put("staff", "light-sabre");
+		newRes.put("t", "light-sabre");
+		newRoles = new HashMap<String, String>();
+		newRoles.put("jedi", "");
+		newRoles.put("sith", "");
+		newRoles.put("obiwan", "jedi");
+		newRoles.put("luke", "jedi");
+		newRoles.put("darth-vader", "sith");
+		newRoles.put("darth-maul", "sith");
+		newPerms = new HashMap<>();
+		Map<String, Boolean> allTrue = new HashMap<>();
+		allTrue.put("ALL", true);
+		Map<String, Boolean> allFalse = new HashMap<>();
+		allFalse.put("ALL", false);
+		newPerms.put("*::*", allFalse);
+		newPerms.put("jedi::light-sabre", allTrue);
+		newPerms.put("jedi::laser-gun", allFalse);
+		newPerms.put("sith::light-sabre", allTrue);
+		newPerms.put("sith::laser-gun", allTrue);
+		newPerms.put("luke::laser-gun", allTrue);
+		newPerms.put("jedi::t", allFalse);
+
+		//test import
+		boolean thrown = false;
+		try {
+			acl.importResources(resources);
+		} catch (NonEmptyException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown, "Resources are non-empty");
+		thrown = false;
+		try {
+			acl.importRoles(roles);
+		} catch (NonEmptyException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown, "Roles are non-empty");
+		thrown = false;
+		try {
+			acl.importPermissions(newPerms);
+		} catch (NonEmptyException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown, "Permissions are non-empty");
+
+		acl.clear();
+		acl.importResources(newRes);
+		acl.importRoles(newRoles);
+		acl.importPermissions(newPerms);
+
+		//verify the permissions are correct
+		Assert.assertTrue(acl.isAllowed(new Role("jedi"), new Resource(
+				"light-sabre")));
+		Assert.assertTrue(acl.isDenied(new Role("jedi"), new Resource(
+				"laser-gun")));
+		Assert.assertTrue(acl.isAllowed(new Role("luke"), new Resource(
+				"laser-gun")));
+		Assert.assertTrue(acl.isAllowed(new Role("sith"), new Resource(
+				"laser-gun")));
+		Assert.assertTrue(acl.isDenied(new Role("jedi"), new Resource("t")));
+
+		//change permissions
+		acl.deny(new Role("sith"), new Resource("laser-gun"));
+		//add resource, role and permission
+		acl.addResource(new Resource("double"), new Resource("light-sabre"));
+		acl.addRole(new Role("Anakin"), new Role("jedi"));
+		acl.allow(new Role("jedi"), new Resource("double"), "UPDATE");
+
+		//verify permissions are correct
+		Assert.assertTrue(
+				acl.isAllowed(new Role("jedi"), new Resource("double")),
+				"True because UPDATE on double is redundant");
+		Assert.assertTrue(acl.isAllowed(new Role("jedi"),
+				new Resource("double"), "UPDATE"));
+
+		//change double to be not redundant
+		acl.deny(new Role("jedi"), new Resource("double"), "CREATE");
+
+		Assert.assertFalse(
+				acl.isAllowed(new Role("jedi"), new Resource("double")),
+				"False because jedi::double DENY CREATE");
+		Assert.assertTrue(acl.isAllowed(new Role("jedi"),
+				new Resource("double"), "UPDATE"), "Still true");
+		Assert.assertTrue(acl.isDenied(new Role("luke"),
+				new Resource("double"), "CREATE"),
+				"True because inherits jedi.");
+		Assert.assertTrue(acl.isDenied(new Role("sith"), new Resource(
+				"laser-gun")));
+		Assert.assertTrue(acl.isDenied(new Role("jedi"), new Resource("t")));
+
+		resources = acl.exportResources();
+		roles = acl.exportRoles();
+		perms = acl.exportPermissions();
+
+		//verify that the maps are disconnected
+		Assert.assertTrue(newRes.size() < resources.size(),
+				"Exported resources are not affected");
+		Assert.assertTrue(newRoles.size() < roles.size(),
+				"Exported roles are not affected");
+		Assert.assertTrue(newPerms.size() < perms.size(),
+				"Exported permissions are not affected");
+
+	}
+
 	@Test(priority = 41)
 	//following the example from http://book.cakephp.org/2.0/en/core-libraries/components/access-control-lists.html
 	public void testCakeExampleAndImport() {
