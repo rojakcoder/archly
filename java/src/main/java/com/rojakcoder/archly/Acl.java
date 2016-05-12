@@ -13,31 +13,29 @@ import com.rojakcoder.archly.exceptions.NonEmptyException;
 public class Acl {
 	private static final String NON_EMPTY = "%s registry is not empty.";
 
-	private static Acl instance = null;
-
 	private Permission perms;
 
 	private Registry resources;
 
 	private Registry roles;
 
-	private Acl() {
-		roles = RoleRegistry.getSingleton();
-		perms = Permission.getSingleton();
-		resources = ResourceRegistry.getSingleton();
+	private Acl(Registry roles, Registry resources, Permission perms) {
+		this.roles = roles;
+		this.resources = resources;
+		this.perms = perms;
 	}
 
 	/**
 	 * Gets the singleton instance of Acl.
 	 *
-	 * @return The singleton instance.
+	 * @return Returns a new, empty instance of Acl.
 	 */
-	public static Acl getInstance() {
-		if (instance == null) {
-			instance = new Acl();
-		}
+	public static Acl makeInstance() {
+		Registry roles = new RoleRegistry();
+		Registry resources = new ResourceRegistry();
+		Permission perms = new Permission();
 
-		return instance;
+		return new Acl(roles, resources, perms);
 	}
 
 	/**
@@ -574,6 +572,31 @@ public class Acl {
 		for (String r: rol) {
 			this.perms.removeByRole(r);
 		}
+	}
+
+	public String visualize() {
+		StringBuffer sb = new StringBuffer();
+
+		sb.append(roles);
+		sb.append("\n");
+		sb.append(resources);
+		sb.append("\n");
+		sb.append(perms);
+		sb.append("\n");
+
+		return sb.toString();
+	}
+
+	public String visualizePermissions() {
+		return perms.toString();
+	}
+
+	public String visualizeResources(AclEntry loader) {
+		return resources.display(loader, null, null);
+	}
+
+	public String visualizeRoles(AclEntry loader) {
+		return roles.display(loader, null, null);
 	}
 }
 

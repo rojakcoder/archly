@@ -78,11 +78,17 @@ class Registry {
 	 * entry.
 	 * @throws DuplicationException Throws this exception if the child entry is
 	 * already in the registry.
+	 * @throws EntryNotFoundException Throws this exception if the parent entry
+	 * is not in the registry.
 	 */
-	void add(String child, String parent) throws DuplicateEntryException {
+	void add(String child, String parent) throws DuplicateEntryException,
+			EntryNotFoundException {
 		if (registry.containsKey(child)) {
 			throw new DuplicateEntryException(String.format(DUPLICATE_ENTRIES,
 					child));
+		}
+		if (!registry.containsKey(parent)) {
+			throw new EntryNotFoundException(String.format(NOT_FOUND, parent));
 		}
 		registry.put(child, parent);
 	}

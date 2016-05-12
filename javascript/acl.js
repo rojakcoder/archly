@@ -1,3 +1,4 @@
+/*! Archly v0.5.0 | https://github.com/rojakcoder/archly/blob/master/LICENSE */
 (function (win) {
     'strict';
 
@@ -11,6 +12,7 @@
      * The map of role-resource tupe to permissions.
      * The first level key is the tupe, the second level key is the action.
      * Available actions are "ALL", "CREATE", "READ", "UPDATE", "DELETE".
+     * @name Permission
      * @constructor
      */
     function Permission() {
@@ -19,6 +21,12 @@
         this.makeDefaultDeny();
     }
 
+    /**
+     * Helper function called by remove functions to remove permissions.
+     * @param {Object} perms - The map of permissions - Permission.perms.
+     * @param {string[]} keys - The array of keys to remove from the permission.
+     * @return {Number} Returns the number of removed permissions.
+     */
     function remove(perms, keys) {
         var i,
             removed = 0;
@@ -43,6 +51,10 @@
         DELETE: 'DELETE'
     };
 
+    /**
+     * Visualization of the permissions in tuples.
+     * @memberof Permission
+     */
     Permission.prototype.toString = function () {
         var action, entry, tuple,
             out = ['Size: '];
@@ -71,6 +83,16 @@
         return out.join('');
     };
 
+    /**
+     * Grants action permission on resource to role.
+     * Adds the action permission to any existing actions. Overrides the
+     * existing action permission if any.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @param {string} [action=ALL] - The access action.
+     * @memberof Permission
+     */
     Permission.prototype.allow = function (role, resource, action) {
         var perm, key = this.makeKey(role, resource);
 
@@ -85,10 +107,24 @@
         }
     };
 
+    /**
+     * Removes all permissions.
+     * @memberof Permission
+     */
     Permission.prototype.clear = function () {
         this.perms = {};
     };
 
+    /**
+     * Denies action permission on resource to role.
+     * Adds the action permission to any existing actions. Overrides the
+     * existing action permission if any.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @param {string} [action=ALL] - The access action.
+     * @memberof Permission
+     */
     Permission.prototype.deny = function (role, resource, action) {
         var perm, key = this.makeKey(role, resource);
 
@@ -103,6 +139,14 @@
         }
     };
 
+    /**
+     * Exports a snapshot of the permissions map.
+     *
+     * @return {Object} A map with string keys and map values where
+     * the values are maps of string to boolean entries. Typically
+     * meant for persistent storage.
+     * @memberof Permission
+     */
     Permission.prototype.export = function () {
         var i, j, clone = {};
 
@@ -120,10 +164,27 @@
         return clone;
     };
 
+    /**
+     * Determines if the role-resource tuple is available.
+     *
+     * @param {string} key - The tuple of role and resource.
+     * @return {Boolean} Returns true if the permission is available for this tuple.
+     * @memberof Permission
+     */
     Permission.prototype.has = function (key) {
         return !!this.perms[key];
     };
 
+    /**
+     * Re-creates the permission map with a new of permissions.
+     *
+     * @param {Object} map - The map of string-string-boolean
+     * tuples. The first-level string is a permission key
+     * (<aco>::<aro>); the second-level string is the set of
+     * actions; the boolean value indicates whether the permission
+     * is explicitly granted/denied.
+     * @memberof Permission
+     */
     Permission.prototype.importMap = function (map) {
         var i, j;
 
@@ -140,6 +201,17 @@
         }
     };
 
+    /**
+     * Determines if the role has access on the resource.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @return {Boolean} Returns true only if the role has been
+     * explicitly given access to all actions on the resource.
+     * Returns false if the role has been explicitly denied access.
+     * Returns null otherwise.
+     * @memberof Permission
+     */
     Permission.prototype.isAllowedAll = function (role, resource) {
         var k, perm,
             allSet = 0,
@@ -171,6 +243,21 @@
         return null;
     };
 
+    /**
+     * Determines if the role has access on the resource for the specific action.
+     * The permission on the specific action is evaluated to see if it has been
+     * specified. If not specified, the permission on the <code>ALL</code>
+     * permission is evaluated. If both are not specified, <code>null</code> is
+     * returned.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @param {string} action - The access action.
+     * @return {Boolean} Returns true if the role has access to the specified
+     * action on the resource. Returns false if the role is denied
+     * access. Returns null if no permission is specified.
+     * @memberof Permission
+     */
     Permission.prototype.isAllowed = function (role, resource, action) {
         var perm, key = this.makeKey(role, resource);
 
@@ -191,6 +278,17 @@
         return perm[action];
     };
 
+    /**
+     * Determines if the role is denied access on the resource.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @return {Boolean} Returns true only if the role has been
+     * explicitly denied access to all actions on the resource.
+     * Returns false if the role has been explicitly granted access.
+     * Returns null otherwise.
+     * @memberof Permission
+     */
     Permission.prototype.isDeniedAll = function (role, resource) {
         var k, perm,
             allSet = 0,
@@ -223,6 +321,22 @@
         return null;
     };
 
+    /**
+     * Determines if the role is denied access on the resource for the specific
+     * action.
+     * The permission on the specific action is evaluated to see if it has been
+     * specified. If not specified, the permission on the <code>ALL</code>
+     * permission is evaluated. If both are not specified, <code>null</code> is
+     * returned.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @param {string} action - The access action.
+     * @return {Boolean} Returns true if the role is denied access
+     * to the specified action on the resource. Returns false if the
+     * role has access. Returns null if no permission is specified.
+     * @memberof Permission
+     */
     Permission.prototype.isDenied = function (role, resource, action) {
         var perm, key = this.makeKey(role, resource);
 
@@ -243,14 +357,31 @@
         return !perm[action];
     };
 
+    /**
+     * Makes the default permission allow.
+     * @memberof Permission
+     */
     Permission.prototype.makeDefaultAllow = function () {
         this.perms[Permission.DEFAULT_KEY] = this.makePermission(Permission.Types.ALL, true);
     };
 
+    /**
+     * Makes the default permission deny.
+     * @memberof Permission
+     */
     Permission.prototype.makeDefaultDeny = function () {
         this.perms[Permission.DEFAULT_KEY] = this.makePermission(Permission.Types.ALL, false);
     };
 
+    /**
+     * Removes the specified permission on resource from role.
+     *
+     * @param {string} role - The ID of the access request object.
+     * @param {string} resource - The ID of the access control object.
+     * @param {string} [action=ALL] - The access action.
+     * @throws Will throw an error if the permission is not available.
+     * @memberof Permission
+     */
     Permission.prototype.remove = function (role, resource, action) {
         var orig, perm,
             key = this.makeKey(role, resource),
@@ -303,6 +434,13 @@
         }
     };
 
+    /**
+     * Removes all permissions related to the resource.
+     *
+     * @param {string} resourceId - The ID of the resource to remove.
+     * @return {Number} The number of removed permissions.
+     * @memberof Permission
+     */
     Permission.prototype.removeByResource = function (resourceId) {
         var key,
             toRemove = [],
@@ -319,6 +457,13 @@
         return remove(this.perms, toRemove);
     };
 
+    /**
+     * Removes all permissions related to the role.
+     *
+     * @param {string} roleId - The ID of the role to remove.
+     * @return {Number} The number of removed permissions.
+     * @memberof Permission
+     */
     Permission.prototype.removeByRole = function (roleId) {
         var key,
             toRemove = [],
@@ -335,28 +480,41 @@
         return remove(this.perms, toRemove);
     };
 
+    /**
+     * The number of specified permissions.
+     *
+     * @return {Number} The number of permissions in the registry.
+     * @memberof Permission
+     */
     Permission.prototype.size = function () {
         return Object.keys(this.perms).length;
     };
 
+    /**
+     * Creates the key in the form "<aro>::<aco>" where "<aro>" is
+     * the ID of the role, and "<aco>" is the ID of the resource.
+     *
+     * @param {string} role The ID of the role.
+     * @param {string} resource The ID of the resource.
+     * @return {string} The key of the permission.
+     * @memberof Permission
+     */
     Permission.prototype.makeKey = function (role, resource) {
         var aco = resource ? resource : '*',
             aro = role ? role : '*';
 
-//        if (!role) {
-//            aro = '*';
-//        } else {
-//            aro = role.getId();
-//        }
-//        if (!resource) {
-//            aco = '*';
-//        } else {
-//            aco = resource.getId();
-//        }
-//
         return aro + '::' + aco;
     };
 
+    /**
+     * Creates a permissions map.
+     *
+     * @param {string} action The action to set. Accepted values are
+     * "ALL", "CREATE", "READ", "UPDATE", "DELETE".
+     * @param {Boolean} allow Either true or false to grant or deny access.
+     * @return {Object} The map of string-boolean values.
+     * @memberof Permission
+     */
     Permission.prototype.makePermission = function (action, allow) {
         var perm = {};
 
@@ -395,16 +553,20 @@
     /**
      * Adds an entry to the registry.
      *
-     * @param {AclEntry} entry - The entry to add.
-     * @param {AclEntry} [parent] - The parent entry under which to
+     * @param {string} entry - The entry to add.
+     * @param {string} [parent] - The parent entry under which to
      * place the child entry.
-     * @throws Will throw an error if the entry is already in the registry.
+     * @throws Will throw an error if the entry is already in the
+     * registry or if the parent is not in the registry.
      */
     Registry.prototype.add = function (entry, parent) {
         if (this.has(entry)) {
             throw new Error(DUPLICATE_ENTRIES.replace(/_entry_/g, entry));
         }
         if (parent) {
+            if (!this.has(parent)) {
+                throw new Error(ENTRY_NOT_FOUND.replace(/_entry_/g, parent));
+            }
             this.registry[entry] = parent;
         } else {
             this.registry[entry] = '';
@@ -639,6 +801,11 @@
         return children;
     }
 
+    /**
+     * The Acl class for managing permissions.
+     * @name Acl
+     * @constructor
+     */
     function Acl(perms, resourceReg, roleReg) {
         this.perms = perms;
         this.resources = resourceReg;
@@ -659,6 +826,10 @@
         throw new Error('Invalid entry type - expected a string or object with the getId() method.');
     }
 
+    /**
+     * Adds a resource.
+     * @memberof Acl
+     */
     Acl.prototype.addResource = function (resource, parent) {
         this.resources.add(getValue(resource), getValue(parent));
     }
@@ -892,18 +1063,40 @@
         }
     };
 
-//    win.Archly = {
-//        Acl: new Acl(PERMS, RESOURCE_REGISTRY, ROLE_REGISTRY),
-//        PermissionTypes: Permission.Types,
-//        Permissions: PERMS,
-//        ResourceRegistry: RESOURCE_REGISTRY,
-//        RoleRegistry: ROLE_REGISTRY,
-//    };
+    Acl.prototype.visualize = function () {
+        var output = [];
 
-    win.PERMISSION_TYPES = Permission.Types;
-    win.PERMISSIONS = new Permission();
-    win.ROLE_REGISTRY = new Registry();
-    win.RESOURCE_REGISTRY = new Registry();
-    win.ACL = new Acl(win.PERMISSIONS, win.RESOURCE_REGISTRY, win.ROLE_REGISTRY);
+        output.push(this.roles.toString());
+        output.push('\n');
+        output.push(this.resources.toString());
+        output.push('\n');
+        output.push(this.perms.toString());
+        output.push('\n');
+
+        return output.join('');
+    };
+
+    Acl.prototype.visualizePermissions = function () {
+        return this.perms.toString();
+    };
+
+    Acl.prototype.visualizeResources = function (loader) {
+        return this.resources.display(loader, null, null);
+    };
+
+    Acl.prototype.visualizeRoles = function (loader) {
+        return this.roles.display(loader, null, null);
+    };
+
+    win.Archly = {
+        TYPES: Permission.Types,
+        makeAcl: function () {
+            var roles = new Registry(),
+                resources = new Registry(),
+                permissions = new Permission();
+
+            return new Acl(permissions, resources, roles);
+        }
+    };
 }(window));
 

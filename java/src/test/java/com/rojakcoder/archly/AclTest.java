@@ -11,7 +11,7 @@ import com.rojakcoder.archly.exceptions.EntryNotFoundException;
 import com.rojakcoder.archly.exceptions.NonEmptyException;
 
 public class AclTest {
-	static Acl acl = Acl.getInstance();
+	static Acl acl = Acl.makeInstance();
 
 	@Test(priority = 4)
 	public void testRunner() {
@@ -41,7 +41,7 @@ public class AclTest {
 		Assert.assertEquals(root.getEntryDescription(), "ROOT");
 		Assert.assertNull(root.retrieveEntry(null));
 
-		Permission p = Permission.getSingleton();
+		Permission p = new Permission();
 		p.permissions.remove("*::*");
 		Assert.assertFalse(acl.isAllowed(nulle, nulle));
 		Assert.assertFalse(acl.isAllowed(nulle, nulle, "ALL"));
@@ -200,8 +200,8 @@ public class AclTest {
 		Assert.assertFalse(acl.isDenied(rol2, res2));
 		acl.remove(rol2, res2, "CREATE");
 		Assert.assertFalse(acl.isDenied(rol2, res2));
-		Assert.assertFalse(Permission.getSingleton().permissions
-				.containsKey(rol2.getId() + "::" + res2.getId()));
+		Assert.assertFalse((new Permission()).permissions.containsKey(rol2
+				.getId() + "::" + res2.getId()));
 
 		Assert.assertTrue(acl.isDenied(rol1, res1, "CREATE"));
 		Assert.assertTrue(acl.isDenied(rol1, res1, "READ"));
@@ -280,7 +280,7 @@ public class AclTest {
 		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		Assert.assertTrue(acl.isAllowed(rol1, res1c1));
 		//1-2
-		Assert.assertTrue(acl.isDenied(rol1, res2));
+		Assert.assertFalse(acl.isAllowed(rol1, res2));
 		Assert.assertFalse(acl.isAllowed(rol1, res2));
 		//1-3
 		Assert.assertTrue(acl.isDenied(rol1, res3));
@@ -524,9 +524,6 @@ public class AclTest {
 		String[] ress = {
 			"C1", "C2", "C3", "C4"
 		};
-		Permission p = Permission.getSingleton();
-		ResourceRegistry regRes = ResourceRegistry.getSingleton();
-		RoleRegistry regRole = RoleRegistry.getSingleton();
 
 		acl.clear();
 		//create mappings for each key pair
@@ -555,57 +552,57 @@ public class AclTest {
 			Assert.assertTrue(acl.isAllowed(new Rol(r), new Res("*")));
 		}
 		//4x4 pairs, 2x4 ALL access, 1 child each
-		Assert.assertEquals(p.size(), 26); //4x4+4+4+1+1
-		Assert.assertEquals(regRes.size(), 8); //4+4
-		Assert.assertEquals(regRole.size(), 8); //4+4
+		Assert.assertEquals(acl.exportPermissions().size(), 26); //4x4+4+4+1+1
+		Assert.assertEquals(acl.exportResources().size(), 8); //4+4
+		Assert.assertEquals(acl.exportRoles().size(), 8); //4+4
 
 		//remove all access on C4
 		acl.removeResource(new Res("C4"), false);
-		Assert.assertEquals(p.size(), 21); //4x3+4+3+1+1
-		Assert.assertEquals(regRes.size(), 7); //3+4, less C4 but not its child
-		Assert.assertEquals(regRole.size(), 8); //4+4
+		Assert.assertEquals(acl.exportPermissions().size(), 21); //4x3+4+3+1+1
+		Assert.assertEquals(acl.exportResources().size(), 7); //3+4, less C4 but not its child
+		Assert.assertEquals(acl.exportRoles().size(), 8); //4+4
 
 		//remove all access on R4
 		acl.removeRole(new Rol("R4"), false);
-		Assert.assertEquals(p.size(), 17); //3x3+3+3+1+1
-		Assert.assertEquals(regRes.size(), 7); //3+4
-		Assert.assertEquals(regRole.size(), 7); //3+4, less R4 but not its child
+		Assert.assertEquals(acl.exportPermissions().size(), 17); //3x3+3+3+1+1
+		Assert.assertEquals(acl.exportResources().size(), 7); //3+4
+		Assert.assertEquals(acl.exportRoles().size(), 7); //3+4, less R4 but not its child
 
 		//remove all access on C3 and child
 		acl.removeResource(new Res("C3"), true);
-		Assert.assertEquals(p.size(), 13); //3x2+3+2+1+1
-		Assert.assertEquals(regRes.size(), 5); //2+3, less C3 and child
-		Assert.assertEquals(regRole.size(), 7); //3+4
+		Assert.assertEquals(acl.exportPermissions().size(), 13); //3x2+3+2+1+1
+		Assert.assertEquals(acl.exportResources().size(), 5); //2+3, less C3 and child
+		Assert.assertEquals(acl.exportRoles().size(), 7); //3+4
 
 		//remove all access on R3 and child
 		acl.removeRole(new Rol("R3"), true);
-		Assert.assertEquals(p.size(), 10); //2x2+2+2+1+1
-		Assert.assertEquals(regRes.size(), 5); //2+3
-		Assert.assertEquals(regRole.size(), 5); //2+3, less R3 and child
+		Assert.assertEquals(acl.exportPermissions().size(), 10); //2x2+2+2+1+1
+		Assert.assertEquals(acl.exportResources().size(), 5); //2+3
+		Assert.assertEquals(acl.exportRoles().size(), 5); //2+3, less R3 and child
 
 		//remove all access on C2 and child
 		acl.removeResource(new Res("C2"), true);
-		Assert.assertEquals(p.size(), 6); //2x1+2+1+1+0, less child permission
-		Assert.assertEquals(regRes.size(), 3); //1+2, less C2 and child
-		Assert.assertEquals(regRole.size(), 5); //2+3
+		Assert.assertEquals(acl.exportPermissions().size(), 6); //2x1+2+1+1+0, less child permission
+		Assert.assertEquals(acl.exportResources().size(), 3); //1+2, less C2 and child
+		Assert.assertEquals(acl.exportRoles().size(), 5); //2+3
 
 		//remove all access on R2 and child
 		acl.removeRole(new Rol("R2"), true);
-		Assert.assertEquals(p.size(), 3); //1x1+1+1+0+0, less child permission
-		Assert.assertEquals(regRes.size(), 3); //1+2
-		Assert.assertEquals(regRole.size(), 3); //1+2, less R2 and child
+		Assert.assertEquals(acl.exportPermissions().size(), 3); //1x1+1+1+0+0, less child permission
+		Assert.assertEquals(acl.exportResources().size(), 3); //1+2
+		Assert.assertEquals(acl.exportRoles().size(), 3); //1+2, less R2 and child
 
 		//remove all access on C1 and child
 		acl.removeResource(new Res("C1"), true);
-		Assert.assertEquals(p.size(), 1); //1x0+1+0+0+0
-		Assert.assertEquals(regRes.size(), 1); //0+1
-		Assert.assertEquals(regRole.size(), 3); //1+2
+		Assert.assertEquals(acl.exportPermissions().size(), 1); //1x0+1+0+0+0
+		Assert.assertEquals(acl.exportResources().size(), 1); //0+1
+		Assert.assertEquals(acl.exportRoles().size(), 3); //1+2
 
 		//remove all access on R1 and child
 		acl.removeRole(new Rol("R1"), true);
-		Assert.assertEquals(p.size(), 0); //0x0+0+0+0+0
-		Assert.assertEquals(regRes.size(), 1); //0+1
-		Assert.assertEquals(regRole.size(), 1); //0+1
+		Assert.assertEquals(acl.exportPermissions().size(), 0); //0x0+0+0+0+0
+		Assert.assertEquals(acl.exportResources().size(), 1); //0+1
+		Assert.assertEquals(acl.exportRoles().size(), 1); //0+1
 
 		//test coverage
 		AclEntry nullEntry = null;
@@ -645,14 +642,15 @@ public class AclTest {
 
 	@Test(priority = 48)
 	public void testExportImport() {
+		Acl acl = Acl.makeInstance();
 		//test export
 		Map<String, String> resources = acl.exportResources();
 		Map<String, String> roles = acl.exportRoles();
 		Map<String, Map<String, Boolean>> perms = acl.exportPermissions();
 
-		Assert.assertTrue(resources.size() > 0, "Existing resources");
-		Assert.assertTrue(roles.size() > 0, "Existing roles");
-		Assert.assertTrue(perms.size() > 0, "Existing permissions");
+		Assert.assertTrue(resources.size() == 0, "Existing resources");
+		Assert.assertTrue(roles.size() == 0, "Existing roles");
+		Assert.assertTrue(perms.size() == 1, "Existing default permission");
 
 		//verify that the exported ones are indeed snapshots
 		acl.addResource(new Resource("laser-gun"));
@@ -779,9 +777,49 @@ public class AclTest {
 	}
 
 	@Test(priority = 41)
+	public void testRealLife() {
+		Acl acl = Acl.makeInstance();
+		String GENERAL = "GENERAL";
+		String SYSTEM = "SYSTEM";
+		String FINANCE = "FINANCE";
+		String TECH = "TECH";
+
+		Map<String, String> roles = new HashMap<>();
+		roles.put(GENERAL, "*");
+		roles.put(SYSTEM, GENERAL);
+		roles.put("chuacheehow@gsatech.com.sg", SYSTEM);
+		roles.put(FINANCE, "*");
+		roles.put(TECH, "*");
+		roles.put("rahman@gsatech.com.sg", TECH);
+		roles.put("julia@gsatech.com.sg", FINANCE);
+
+		Map<String, String> res = new HashMap<>();
+		res.put("organization", "*");
+		res.put("device", "*");
+		res.put("make", "*");
+
+		Map<String, Boolean> allFalse = new HashMap<>();
+		allFalse.put("ALL", false);
+		Map<String, Boolean> allTrue = new HashMap<>();
+		allTrue.put("ALL", true);
+		Map<String, Map<String, Boolean>> perms = new HashMap<>();
+		perms.put("*::*", allFalse);
+		perms.put(SYSTEM + "::*", allTrue);
+		perms.put(TECH + "::device", allTrue);
+		perms.put(FINANCE + "::organization", allTrue);
+
+		acl.clear();
+		acl.importRoles(roles);
+		acl.importResources(res);
+		acl.importPermissions(perms);
+
+		System.out.println(acl.visualize());
+	}
+
+	@Test
 	//following the example from http://book.cakephp.org/2.0/en/core-libraries/components/access-control-lists.html
 	public void testCakeExampleAndImport() {
-		Acl a = Acl.getInstance();
+		Acl a = Acl.makeInstance();
 		a.clear();
 
 		Rol warriors = new Rol("Warriors");
@@ -890,7 +928,7 @@ public class AclTest {
 		//allow visitors
 		a.allow(visitors, pork);
 
-		printReg();
+		printRegistries(a);
 
 		//Pippin can access ale
 		Assert.assertTrue(a.isAllowed(pippin, ale));
@@ -917,18 +955,16 @@ public class AclTest {
 		Assert.assertFalse(a.isAllowed(gimli, weapons, "DELETE"));
 	}
 
-	private void printReg() {
+	private void printRegistries(Acl a) {
 		Res res = new Res("ACO");
 		Rol rol = new Rol("ARO");
 
 		System.out.println(">>> RESOURCES");
-		System.out.println(ResourceRegistry.getSingleton().display(res, null,
-				null));
+		System.out.println(a.visualizeResources(res));
 		System.out.println(">>> ROLES");
-		System.out
-				.println(RoleRegistry.getSingleton().display(rol, null, null));
+		System.out.println(a.visualizeRoles(rol));
 		System.out.println(">>> PERMISSIONS");
-		System.out.println(Permission.getSingleton());
+		System.out.println(a.visualizePermissions());
 	}
 }
 

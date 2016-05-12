@@ -1,5 +1,20 @@
 # Change Log
 
+## 0.5.0 - 2016-05-11
+
+### Added
+- Added methods to visualize the internal registries of Acl.
+- Added a check for parent entries to exist.
+- Added JS documentation to Permission.
+
+### Changed
+- Changed Acl to be able to return different instances.
+- Converted the constructor for the internal classes from private to
+package access.
+
+### Removed
+- Removed all the singleton methods from the classes.
+
 ## 2016-04-21
 
 ### Added

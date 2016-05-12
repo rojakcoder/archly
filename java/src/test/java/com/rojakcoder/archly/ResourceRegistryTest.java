@@ -19,7 +19,7 @@ public class ResourceRegistryTest {
 	public void testAddRemoveEntry() {
 		System.out.println("testAddRemoveEntry");
 
-		ResourceRegistry reg = ResourceRegistry.getSingleton();
+		ResourceRegistry reg = new ResourceRegistry();
 		String u1 = new String("RES-1");
 		String u2 = new String("RES-2");
 		String u = new String("RES");
@@ -59,7 +59,7 @@ public class ResourceRegistryTest {
 		System.out.println("testAddParents");
 		boolean thrown = false;
 
-		ResourceRegistry reg = ResourceRegistry.getSingleton();
+		ResourceRegistry reg = new ResourceRegistry();
 		String u1 = new String("RES-1");
 		String u2 = new String("RES-2");
 
@@ -70,9 +70,18 @@ public class ResourceRegistryTest {
 		String u2a1i = new String("RES-2-A-1-i");
 		String u1b1 = new String("RES-1-B-1");
 
-		reg.add(u1a, u1);
-		Assert.assertEquals(reg.size(), 3);
+		try {
+			reg.add(u1a, u1);
+		} catch (EntryNotFoundException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown, "Parent does not exist.");
 
+		//add the parents
+		reg.add(u1);
+		reg.add(u2);
+		//add the children
+		reg.add(u1a, u1);
 		reg.add(u1b, u1);
 		Assert.assertEquals(reg.size(), 4);
 

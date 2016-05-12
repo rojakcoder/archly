@@ -25,8 +25,6 @@ class Permission {
 
 	private static final String DEFAULT_KEY = "*::*";
 
-	private static Permission instance;
-
 	/**
 	 * The map of role-resource tuple to permissions.
 	 * <p>
@@ -40,22 +38,9 @@ class Permission {
 		ALL, CREATE, READ, UPDATE, DELETE
 	}
 
-	private Permission() {
+	Permission() {
 		permissions = new ConcurrentHashMap<>();
 		makeDefaultDeny();
-	}
-
-	/**
-	 * Gets the singleton instance of Permission.
-	 *
-	 * @return The singleton instance.
-	 */
-	static Permission getSingleton() {
-		if (instance == null) {
-			instance = new Permission();
-		}
-
-		return instance;
 	}
 
 	@Override
@@ -184,7 +169,10 @@ class Permission {
 	/**
 	 * Re-creates the permission map with a new of permissions.
 	 *
-	 * @param map The map containing the new permissions.
+	 * @param map The map containing the new permissions. The first-level string
+	 * is a permission key (<aco>::<aro>); the second-level string is the set of
+	 * actions; the boolean value indicates whether the permission is explicitly
+	 * granted/denied.
 	 */
 	void importMap(Map<String, Map<String, Boolean>> map) {
 		this.permissions = new ConcurrentHashMap<>(map);

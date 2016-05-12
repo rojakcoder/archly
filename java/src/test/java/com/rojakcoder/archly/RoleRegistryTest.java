@@ -10,7 +10,7 @@ import com.rojakcoder.archly.exceptions.DuplicateEntryException;
 public class RoleRegistryTest {
 	@Test(priority = 1)
 	public void testTraversal() throws DuplicateEntryException {
-		RoleRegistry reg = RoleRegistry.getSingleton();
+		RoleRegistry reg = new RoleRegistry();
 		List<String> path = null;
 		String r1 = new String("String-1");
 		String r2 = new String("String-2");

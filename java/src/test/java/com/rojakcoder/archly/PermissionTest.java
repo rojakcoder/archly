@@ -6,7 +6,7 @@ import org.testng.annotations.Test;
 import com.rojakcoder.archly.exceptions.EntryNotFoundException;
 
 public class PermissionTest {
-	static Permission p = Permission.getSingleton();
+	static Permission p = new Permission();
 
 	@Test(priority = 3)
 	public void testRunner() throws InterruptedException {
@@ -15,10 +15,6 @@ public class PermissionTest {
 		testDeny();
 		testRemove();
 		testRemoveByResourceRole();
-
-		int size = p.size();
-		Permission pm = Permission.getSingleton();
-		Assert.assertEquals(pm.size(), size);
 	}
 
 	private void testIsAllowedDenied() {
@@ -57,7 +53,6 @@ public class PermissionTest {
 		Assert.assertNull(p.isDenied(null, res1));
 		Assert.assertTrue(p.isDenied(nullrol, nullres, Permission.Types.CREATE));
 		Assert.assertFalse(p.isAllowed(nullres, nullrol));
-
 	}
 
 	private void testAllow() {
@@ -299,6 +294,7 @@ public class PermissionTest {
 		Assert.assertTrue(thrown);
 		thrown = false;
 		try {
+
 			p.remove(rolna, res1);
 		} catch (EntryNotFoundException e) {
 			thrown = true;
