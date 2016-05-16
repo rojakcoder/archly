@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.6.0 - 2016-05-16
+
+### Added
+- Added a simple implementation of the AclEntry interface for the
+purpose of easing the way to utilize the library.
+
+### Changed
+- Changed the `javascript` directory to `js`
+
 ## 0.5.0 - 2016-05-11
 
 ### Added

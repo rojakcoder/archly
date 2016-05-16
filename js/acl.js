@@ -1,4 +1,4 @@
-/*! Archly v0.5.0 | https://github.com/rojakcoder/archly/blob/master/LICENSE */
+/*! Archly v0.6.0 | https://github.com/rojakcoder/archly/blob/master/LICENSE */
 (function (win) {
     'strict';
 
