@@ -121,8 +121,12 @@ public class ResourceRegistryTest {
 		Assert.assertEquals(reg.size(), 1);
 		Assert.assertFalse(reg.hasChild(u1));
 
-		System.out.println(reg.display(new Resource(u1), null, null));
-		System.out.println(reg);
+		String outDisp = reg.display(new Resource(u1), null, null);
+		String expDisp = "- " + u1 + "\n";
+		Assert.assertEquals(outDisp, expDisp);
+		String outReg = reg.toString();
+		String expReg = "\t" + u1 + "\t\t - \t*\n";
+		Assert.assertEquals(outReg, expReg);
 	}
 }
 

@@ -294,7 +294,6 @@ public class PermissionTest {
 		Assert.assertTrue(thrown);
 		thrown = false;
 		try {
-
 			p.remove(rolna, res1);
 		} catch (EntryNotFoundException e) {
 			thrown = true;
