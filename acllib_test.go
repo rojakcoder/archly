@@ -346,7 +346,34 @@ func TestTraversal(t *testing.T) {
 	fmt.Printf("\n\n%v", RegPrintPath(path))
 }
 
-func TestImportExport(t *testing.T) {
+func TestPermImportExport(t *testing.T) {
+	equals := func(title string, exp, act int) {
+		if exp != act {
+			t.Errorf("%v: expected %d; got %d", title, exp, act)
+		}
+	}
+
+	p := NewPermission(true)
+	out := p.Export()
+	equals("Empty permissions map", 1, len(out))
+	p.Clear()
+	out = p.Export()
+	equals("Empty permissions map", 0, len(out))
+
+	in := map[string]map[string]bool{
+		"P1::Q1": {
+			"ALL": true,
+		},
+		"P2::Q1": {
+			"ALL": false,
+		},
+	}
+
+	p.ImportMap(in)
+	equals("Imported permissions", 2, p.Size())
+}
+
+func TestRegImportExport(t *testing.T) {
 	equals := func(title string, exp, act int) {
 		if exp != act {
 			t.Errorf("%v: expected %d; got %d", title, exp, act)
@@ -395,6 +422,7 @@ func TestAllPerms(t *testing.T) {
 	tpermAllow(t)
 	tpermDeny(t)
 	tpermRemove(t)
+	tpermRemoveByResourceRole(t)
 }
 
 func tpermIsAllowedDenied(t *testing.T) {
@@ -873,4 +901,69 @@ func tpermRemove(t *testing.T) {
 	//trying to remove the root but already removed
 	e = p.Remove("", "")
 	testErr("Error when repeating removal of root privileges", e)
+}
+
+func tpermRemoveByResourceRole(t *testing.T) {
+	testNil := func(title string, err error) {
+		if err != nil {
+			t.Errorf("%v: expected nil error; got %v", title, err)
+		}
+	}
+	testSize := func(title string, act, exp int) {
+		if exp != act {
+			t.Errorf("%v: expected %d; got %d", title, exp, act)
+		}
+	}
+	p.Clear()
+	resources := []string{"Q1", "Q2", "Q3", "Q4"}
+	roles := []string{"P1", "P2", "P3", "P4"}
+
+	testSize("Empty permissions", p.Size(), 0)
+	//create mappings for each key pair
+	for _, res := range resources {
+		for _, rol := range roles {
+			p.Allow(rol, res)
+		}
+	}
+	testSize("4x4 for each key pair", p.Size(), 16)
+
+	for _, res := range resources {
+		p.Allow("", res)
+	}
+	testSize("4x4 + 4: Add ALL access", p.Size(), 20)
+	for _, rol := range roles {
+		p.Allow(rol, "")
+	}
+	testSize("4x4+4 + 4: Add ALL access", p.Size(), 24)
+
+	var removed int
+
+	removed = p.RemoveByResource(resources[3])
+	testSize("Remove all access on Q4", p.Size(), 19)
+	testSize("Removed access on Q4", removed, 5)
+
+	removed = p.RemoveByResource(resources[3])
+	testSize("Repeated resource removal has no effect", p.Size(), 19)
+	testSize("Repeated resource removal should yield 0", removed, 0)
+
+	removed = p.RemoveByRole(roles[3])
+	testSize("Remove all access from P4 (Q4 already removed)", p.Size(), 15)
+	testSize("Removed access from P4", removed, 4)
+
+	removed = p.RemoveByRole(roles[3])
+	testSize("Repeated role removal has no effect", p.Size(), 15)
+	testSize("Repeated role removal should yield 0", removed, 0)
+
+	var err error
+	err = p.RemoveAction(roles[2], resources[2], PERMTYPE_UPDATE)
+	testNil("Removing UPDATE permission", err)
+	err = p.RemoveAction(roles[2], resources[2], PERMTYPE_DELETE)
+	testNil("Removing DELETE permission", err)
+	err = p.RemoveAction(roles[2], resources[2], PERMTYPE_CREATE)
+	testNil("Removing CREATE permission", err)
+	err = p.RemoveAction(roles[2], resources[2], PERMTYPE_READ)
+	testNil("Removing READ permission", err)
+	testSize("Removing all CRUD access should remove the entry", p.Size(), 14)
+
+	fmt.Printf("\n\n%v\n\n", p.String())
 }

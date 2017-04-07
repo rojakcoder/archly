@@ -431,7 +431,7 @@ func (this *Permission) RemoveAction(role, resource string, action PermTypes) er
 		delete(perm, PERMTYPE_ALL.String())
 		for t := 2; t <= len(permtypes); t++ {
 			if t != int(action) {
-				perm[action.String()] = origVal
+				perm[PermTypes(t).String()] = origVal
 			}
 		}
 	} else {
