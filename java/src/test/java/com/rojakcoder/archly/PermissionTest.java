@@ -354,12 +354,8 @@ public class PermissionTest {
 	}
 
 	private void testRemoveByResourceRole() throws InterruptedException {
-		String resources[] = {
-			"Q1", "Q2", "Q3", "Q4"
-		};
-		String roles[] = {
-			"P1", "P2", "P3", "P4"
-		};
+		String resources[] = { "Q1", "Q2", "Q3", "Q4" };
+		String roles[] = { "P1", "P2", "P3", "P4" };
 		p.clear();
 
 		Assert.assertEquals(p.size(), 0);
@@ -401,53 +397,50 @@ public class PermissionTest {
 		Assert.assertEquals(p.size(), 15);
 		Assert.assertEquals(removed, 0); //none removed
 
-		//test coverage
-		//add many entries
-		for (int i = 0; i < 50; i++) {
-			p.allow("T" + i, "TA");
-			p.allow("TB", "T" + i);
-		}
-		//create thread 1 to call removeByResource
-		Thread t1 = new Thread(new Runnable() {
-			public void run() {
-				System.out.println(" > Removing by resource TA");
-				int rem = p.removeByResource("TA");
-				System.out.println("Actually removed resources: " + rem);
-				Assert.assertEquals(rem, 49); //T40 is removed by thread 3
-			}
-		});
-		//thread 2 to call removeByRole
-		Thread t2 = new Thread(new Runnable() {
-			public void run() {
-				System.out.println(" > Removing by role TB");
-				int rem = p.removeByRole("TB");
-				System.out.println("Actually removed roles: " + rem);
-				Assert.assertEquals(rem, 49); //T40 is removed by thread 3
-			}
-		});
-		//create thread 3 to remove specific resource
-		Thread t3 = new Thread(new Runnable() {
-			public void run() {
-				try {
-					p.remove("T40", "TA");
-				} catch (EntryNotFoundException e) {
-					System.out.println(" > Entry not found");
-				}
-				try {
-					p.remove("TB", "T40");
-				} catch (EntryNotFoundException e) {
-					System.out.println(" > Entry not found");
-				}
-			}
-		});
-		Permission.RUNTEST = true;
-		t1.start();
-		t2.start();
-		t3.start();
-		t1.join();
-		t2.join();
-		Permission.RUNTEST = false;
-		System.out.println(" > Done testing concurrent modifications");
+//		//test coverage
+//		//add many entries
+//		for (int i = 0; i < 50; i++) {
+//			p.allow("T" + i, "TA");
+//			p.allow("TB", "T" + i);
+//		}
+//		//create thread 1 to call removeByResource
+//		Thread t1 = new Thread(new Runnable() {
+//			public void run() {
+//				System.out.println(" > Removing by resource TA");
+//				int rem = p.removeByResource("TA");
+//				System.out.println("Actually removed resources: " + rem);
+//				Assert.assertEquals(rem, 49); //T40 is removed by thread 3
+//			}
+//		});
+//		//thread 2 to call removeByRole
+//		Thread t2 = new Thread(new Runnable() {
+//			public void run() {
+//				System.out.println(" > Removing by role TB");
+//				int rem = p.removeByRole("TB");
+//				System.out.println("Actually removed roles: " + rem);
+//				Assert.assertEquals(rem, 49); //T40 is removed by thread 3
+//			}
+//		});
+//		//create thread 3 to remove specific resource
+//		Thread t3 = new Thread(new Runnable() {
+//			public void run() {
+//				try {
+//					p.remove("T40", "TA");
+//				} catch (EntryNotFoundException e) {
+//					System.out.println(" > Entry not found");
+//				}
+//				try {
+//					p.remove("TB", "T40");
+//				} catch (EntryNotFoundException e) {
+//					System.out.println(" > Entry not found");
+//				}
+//			}
+//		});
+//		t1.start();
+//		t2.start();
+//		t3.start();
+//		t1.join();
+//		t2.join();
 	}
 }
 

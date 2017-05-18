@@ -16,11 +16,6 @@ import com.rojakcoder.archly.exceptions.EntryNotFoundException;
  * </p>
  */
 class Permission {
-	/**
-	 * A flag for testing purposes.
-	 */
-	static boolean RUNTEST = false;
-
 	private static final String NOT_FOUND = "Permission %s not found on %s for %s";
 
 	private static final String DEFAULT_KEY = "*::*";
@@ -460,19 +455,15 @@ class Permission {
 
 	private int del(Set<String> keys) {
 		int removed = 0;
-		if (RUNTEST) {
-			System.out.println("Expecting to remove " + keys.size());
-		}
 		for (String key: keys) {
 			if (permissions.remove(key) != null) {
 				removed++;
 			}
-			if (RUNTEST) {
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-				}
-			} //else do nothing
+			/*
+			 * to cover the else condition will require concurrent modifications
+			 * of the map by two threads calling, say, removeByRole with the
+			 * same role
+			 */
 		}
 
 		return removed;

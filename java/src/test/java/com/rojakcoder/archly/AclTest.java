@@ -52,6 +52,8 @@ public class AclTest {
 	private void testResource() {
 		Res res1 = new Res("ACO-1");
 		Res res1a = new Res("ACO-1-A");
+		Res res2 = new Res("ACO-2");
+		Res res2a = new Res("ACO-2-A");
 		boolean thrown = false;
 
 		acl.addResource(res1);
@@ -77,11 +79,21 @@ public class AclTest {
 			thrown = true;
 		}
 		Assert.assertTrue(thrown);
+
+		thrown = false;
+		try {
+			acl.addResource(res2a, res2);
+		} catch (EntryNotFoundException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
 	}
 
 	private void testRole() {
 		Rol rol1 = new Rol("ARO-1");
 		Rol rol1a = new Rol("ARO-1-A");
+		Rol rol2 = new Rol("ARO-2");
+		Rol rol2a = new Rol("ARO-2-A");
 		boolean thrown = false;
 
 		acl.addRole(rol1);
@@ -104,6 +116,14 @@ public class AclTest {
 		try {
 			acl.addRole(rol1a, rol1);
 		} catch (DuplicateEntryException e) {
+			thrown = true;
+		}
+		Assert.assertTrue(thrown);
+
+		thrown = false;
+		try {
+			acl.addRole(rol2a, rol2);
+		} catch (EntryNotFoundException e) {
 			thrown = true;
 		}
 		Assert.assertTrue(thrown);
@@ -155,7 +175,8 @@ public class AclTest {
 		Res res2 = new Res("ACO-B");
 		Rol rol2 = new Rol("ARO-B");
 
-		//make default allow otherwise isDenied will also return false if not present
+		//make default allow otherwise isDenied will also return false if not
+		//present
 		acl.makeDefaultAllow();
 
 		//deny role1 to res1
@@ -199,7 +220,8 @@ public class AclTest {
 		Assert.assertTrue(acl.isDenied(rol2, res2, "CREATE"));
 		Assert.assertFalse(acl.isDenied(rol2, res2));
 		acl.remove(rol2, res2, "CREATE");
-		Assert.assertFalse(acl.isDenied(rol2, res2));
+		Assert.assertFalse(acl.isDenied(rol2, res2, "CREATE"));
+		Assert.assertFalse(acl.isDenied(rol2, res2)); //no change
 		Assert.assertFalse((new Permission()).permissions.containsKey(rol2
 				.getId() + "::" + res2.getId()));
 
@@ -274,13 +296,13 @@ public class AclTest {
 		Assert.assertTrue(acl.isAllowed(rol1, res1a2));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b));
 		Assert.assertTrue(acl.isAllowed(rol1, res1b1));
-		// rol1 allowed to res1 - overrides * deny res1c
+		//rol1 allowed to res1 - overrides * deny res1c
 		Assert.assertFalse(acl.isDenied(rol1, res1c));
 		Assert.assertTrue(acl.isAllowed(rol1, res1c));
 		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		Assert.assertTrue(acl.isAllowed(rol1, res1c1));
 		//1-2
-		Assert.assertFalse(acl.isAllowed(rol1, res2));
+		Assert.assertTrue(acl.isDenied(rol1, res2));
 		Assert.assertFalse(acl.isAllowed(rol1, res2));
 		//1-3
 		Assert.assertTrue(acl.isDenied(rol1, res3));
@@ -331,8 +353,10 @@ public class AclTest {
 		Assert.assertFalse(acl.isDenied(rol1, res1c1));
 		//1-2
 		Assert.assertTrue(acl.isDenied(rol1, res2));
+		Assert.assertFalse(acl.isAllowed(rol1, res2));
 		//1-3
 		Assert.assertTrue(acl.isDenied(rol1, res3));
+		Assert.assertFalse(acl.isAllowed(rol1, res3));
 		//2-1
 		Assert.assertTrue(acl.isDenied(rol2, res1));
 		Assert.assertTrue(acl.isDenied(rol2, res1a));
@@ -500,12 +524,16 @@ public class AclTest {
 
 		Assert.assertFalse(acl.isAllowed(rolna, resna));
 		Assert.assertTrue(acl.isDenied(rolna, resna));
+		Assert.assertFalse(acl.isAllowed(rolna, resna, "CREATE"));
+		Assert.assertTrue(acl.isDenied(rolna, resna, "CREATE"));
 
 		acl.remove(nullrol, nullres);
 
 		//false for both because the root is removed
 		Assert.assertFalse(acl.isAllowed(rolna, resna));
 		Assert.assertFalse(acl.isDenied(rolna, resna));
+		Assert.assertFalse(acl.isAllowed(rolna, resna, "CREATE"));
+		Assert.assertFalse(acl.isDenied(rolna, resna, "CREATE"));
 
 		boolean thrown = false;
 		try {
@@ -518,12 +546,8 @@ public class AclTest {
 	}
 
 	private void testRemoveResourceRole() {
-		String[] rols = {
-			"R1", "R2", "R3", "R4"
-		};
-		String[] ress = {
-			"C1", "C2", "C3", "C4"
-		};
+		String[] rols = { "R1", "R2", "R3", "R4" };
+		String[] ress = { "C1", "C2", "C3", "C4" };
 
 		acl.clear();
 		//create mappings for each key pair
@@ -787,11 +811,11 @@ public class AclTest {
 		Map<String, String> roles = new HashMap<>();
 		roles.put(GENERAL, "*");
 		roles.put(SYSTEM, GENERAL);
-		roles.put("chuacheehow@gsatech.com.sg", SYSTEM);
+		roles.put("chuacheehow", SYSTEM);
 		roles.put(FINANCE, "*");
 		roles.put(TECH, "*");
-		roles.put("rahman@gsatech.com.sg", TECH);
-		roles.put("julia@gsatech.com.sg", FINANCE);
+		roles.put("rahman", TECH);
+		roles.put("julia", FINANCE);
 
 		Map<String, String> res = new HashMap<>();
 		res.put("organization", "*");

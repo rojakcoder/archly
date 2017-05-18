@@ -56,9 +56,11 @@ public class Acl {
 	 * @param parent The resource under which the new resource is added.
 	 * @throws DuplicateEntryException Re-throws DuplicateEntryException from
 	 * the resource registry.
+	 * @throws EntryNotFoundException Throws this exception if the parent entry
+	 * is not in the registry.
 	 */
 	public void addResource(AclEntry resource, AclEntry parent)
-			throws DuplicateEntryException {
+			throws DuplicateEntryException, EntryNotFoundException {
 		resources.add(resource.getId(), parent.getId());
 	}
 
@@ -68,8 +70,11 @@ public class Acl {
 	 * @param role The role to add.
 	 * @throws DuplicateEntryException Re-throws DuplicateEntryException from
 	 * the role registry.
+	 * @throws EntryNotFoundException Throws this exception if the parent entry
+	 * is not in the registry.
 	 */
-	public void addRole(AclEntry role) throws DuplicateEntryException {
+	public void addRole(AclEntry role) throws DuplicateEntryException,
+			EntryNotFoundException {
 		roles.add(role.getId());
 	}
 
@@ -160,6 +165,10 @@ public class Acl {
 
 	/**
 	 * Resets all the registries to an empty state.
+	 *
+	 * Note that this also removes the default permission. If required, either
+	 * {@link #makeDefaultAllow()} or {@link #makeDefaultDeny()} should be
+	 * called after this method is invoked.
 	 */
 	public void clear() {
 		perms.clear();
@@ -439,14 +448,14 @@ public class Acl {
 	}
 
 	/**
-	 * Makes the default permission allow.
+	 * Makes the default permission allow, making it a blacklist.
 	 */
 	public void makeDefaultAllow() {
 		perms.makeDefaultAllow();
 	}
 
 	/**
-	 * Makes the default permission deny.
+	 * Makes the default permission deny, making it a whitelist.
 	 */
 	public void makeDefaultDeny() {
 		perms.makeDefaultDeny();
@@ -540,8 +549,8 @@ public class Acl {
 	 * </p>
 	 *
 	 * @param role The role to remove.
-	 * @param removeDescendants If true, all descendant resources of this
-	 * resource are also removed.
+	 * @param removeDescendants If true, all descendant roles of this role are
+	 * also removed.
 	 */
 	public void removeRole(AclEntry role, boolean removeDescendants) {
 		if (role == null) {

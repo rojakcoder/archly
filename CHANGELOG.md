@@ -1,6 +1,6 @@
 # Change Log
 
-## [Unreleased]
+## [0.6.0] - 2017-05-18
 
 ### Added
 - Added the Go version of the library.

@@ -1,3 +1,5 @@
+// Package archly (v0.6.0) is the Go implementation of the hierarchy-based
+// access control list (ACL).
 package archly
 
 import (
@@ -22,6 +24,10 @@ var (
 
 	ErrEntryNotFound = errors.New("entry not found in registry")
 
+	ErrNilEntry = errors.New("nil entry")
+
+	ErrNonEmpty = errors.New("non-empty registry")
+
 	permtypes = [...]string{
 		"ALL",
 		"CREATE",
@@ -44,6 +50,428 @@ type Entry interface {
 	GetID() string
 	GetEntryDesc() string
 	RetrieveEntry(string) Entry
+}
+
+// Acl is the public API for managing permissions, roles and resources.
+type Acl struct {
+	Perms *Permission
+	Rres  *Registry
+	Rrole *Registry
+}
+
+// NewAcl creates a new instance of the ACL.
+//
+// This is equivalent to `makeInstance()` in Java.
+func NewAcl() *Acl {
+	rol := NewRegistry()
+	res := NewRegistry()
+	perm := NewPermission(true)
+	return &Acl{perm, res, rol}
+}
+
+// AddResource adds a resource to the registry.
+//
+// If the resource is already in the registry, a `ErrDupEntry` error is
+// returned.
+func (this *Acl) AddResource(e Entry) error {
+	return this.Rres.Add(e.GetID())
+}
+
+// AddResourceParent performs the same function as AddResource with the
+// difference that the resource is added under a parent resource.
+//
+// e is the child resource, p is the parent resource.
+//
+// If the parent resource is not in the registry, a `ErrEntryNotFound` error
+// is returned.
+func (this *Acl) AddResourceParent(e, p Entry) error {
+	return this.Rres.AddChild(e.GetID(), p.GetID())
+}
+
+// AddRole adds a role to the registry.
+//
+// If the role is already in the registry, a `ErrDupEntry` error is
+// returned.
+func (this *Acl) AddRole(e Entry) error {
+	return this.Rrole.Add(e.GetID())
+}
+
+// AddRoleParent performs the same function as AddRole with the difference
+// that the role is added under a parent role.
+//
+// e is the child role, p is the parent role.
+//
+// If the parent role is not in the registry, a `ErrEntryNotFound` error
+// is returned.
+func (this *Acl) AddRoleParent(e, p Entry) error {
+	return this.Rrole.AddChild(e.GetID(), p.GetID())
+}
+
+// AllowAllResource grants permission on all resources to the role.
+func (this *Acl) AllowAllResource(role Entry) {
+	this.Rrole.Add(role.GetID()) //ignore duplicate error
+	this.Perms.Allow(role.GetID(), NewRootEntry().GetID())
+}
+
+// AllowAllRole grants permission on the resource to all roles.
+func (this *Acl) AllowAllRole(res Entry) {
+	this.Rres.Add(res.GetID())
+	this.Perms.Allow(NewRootEntry().GetID(), res.GetID())
+}
+
+// Allow grants permission on the resource to the role.
+func (this *Acl) Allow(role, res Entry) {
+	this.Rrole.Add(role.GetID()) //ignore duplicate error
+	this.Rres.Add(res.GetID())   //ignore duplicate error
+	this.Perms.Allow(role.GetID(), res.GetID())
+}
+
+// AllowAction grants specific action permission on the resource to the role.
+func (this *Acl) AllowAction(role, res Entry, action PermTypes) {
+	permType := PermTypes(action)
+	this.Rrole.Add(role.GetID()) //ignore duplicate error
+	this.Rres.Add(res.GetID())   //ignore duplicate error
+	this.Perms.AllowAction(role.GetID(), res.GetID(), permType)
+}
+
+// Clear resets all the registries to an empty state.
+//
+// Note that this also removes the default permission. If required, either
+// MakeDefaultAllow or MakeDefaultDeny should be called after this method is
+// invoked.
+func (this *Acl) Clear() {
+	this.Perms.Clear()
+	this.Rres.Clear()
+	this.Rrole.Clear()
+}
+
+// DenyAllResource denies permission on all resources to the role.
+func (this *Acl) DenyAllResource(role Entry) {
+	this.Rrole.Add(role.GetID()) //ignore duplicate error
+	this.Perms.Deny(role.GetID(), NewRootEntry().GetID())
+}
+
+// DenyAllRole denies permission on the resource to all roles.
+func (this *Acl) DenyAllRole(res Entry) {
+	this.Rres.Add(res.GetID()) //ignore duplicate error
+	this.Perms.Deny(NewRootEntry().GetID(), res.GetID())
+}
+
+// Deny denies permission on the resource to the role.
+func (this *Acl) Deny(role, res Entry) {
+	this.Rrole.Add(role.GetID()) //ignore duplicate error
+	this.Rres.Add(res.GetID())   //ignore duplicate error
+	this.Perms.Deny(role.GetID(), res.GetID())
+}
+
+// DenyAction denies specific action permission on the resource to the role.
+func (this *Acl) DenyAction(role, res Entry, action PermTypes) {
+	permType := PermTypes(action)
+	this.Rrole.Add(role.GetID()) //ignore duplicate error
+	this.Rres.Add(res.GetID())   //ignore duplicate error
+	this.Perms.DenyAction(role.GetID(), res.GetID(), permType)
+}
+
+// ExportPermissions exports a snapshot of the permissions map.
+//
+// Returns a string-string-bool map for persistent storage.
+func (this *Acl) ExportPermissions() map[string]map[string]bool {
+	return this.Perms.Export()
+}
+
+// ExportResources exports a snapshot of the resources registry.
+//
+// Returns a string-string map for persistent storage.
+func (this *Acl) ExportResources() map[string]string {
+	return this.Rres.Export()
+}
+
+// ExportRoles exports a snapshot of the roles registry.
+//
+// Returns a string-string map for persistent storage.
+func (this *Acl) ExportRoles() map[string]string {
+	return this.Rrole.Export()
+}
+
+// ImportPermissions imports a new set of permissions.
+//
+// If the existing permissions map is not empty (including the default
+// permission), the ErrNonEmpty error is returned.
+func (this *Acl) ImportPermissions(p map[string]map[string]bool) error {
+	if this.Perms.Size() != 0 {
+		return ErrNonEmpty
+	}
+	this.Perms.ImportMap(p)
+	return nil
+}
+
+// ImportResources imports a new hierarchy of resources.
+//
+// If the existing resource registry is not empty, the ErrNonEmpty error is
+// returned.
+func (this *Acl) ImportResources(r map[string]string) error {
+	if this.Rres.Size() != 0 {
+		return ErrNonEmpty
+	}
+	this.Rres.ImportRegistry(r)
+	return nil
+}
+
+// ImportRoles imports a new hierarchy of roles.
+//
+// If the existing role registry is not empty, the ErrNonEmpty error is
+// returned.
+func (this *Acl) ImportRoles(r map[string]string) error {
+	if this.Rrole.Size() != 0 {
+		return ErrNonEmpty
+	}
+	this.Rrole.ImportRegistry(r)
+	return nil
+}
+
+// IsAllowed determines if the role has access to the resource.
+//
+// Both role and res can be specified as `nil` to check for the default access.
+//
+// Returns true if the role has access on the resource, and false otherwise.
+func (this *Acl) IsAllowed(role, res Entry) bool {
+	var re, ro string
+
+	if role != nil {
+		ro = role.GetID()
+	}
+	if res != nil {
+		re = res.GetID()
+	}
+	//get the traversal path for role
+	rolePath := this.Rrole.TraverseRoot(ro)
+	//get the traversal path for resource
+	resPath := this.Rres.TraverseRoot(re)
+	//check role-resource
+	for _, aro := range rolePath {
+		for _, aco := range resPath {
+			expYes, expNo := this.Perms.IsAllowed(aro, aco)
+			if expYes && !expNo {
+				return true
+			}
+			if !expYes && expNo {
+				return false
+			}
+			//else not specified, continue
+		}
+	}
+
+	return false
+}
+
+// IsAllowedAction performs the same function as IsAllowed with the difference
+// that a type may be specified to check for a specific type of access.
+//
+// `action` is a number ranging from 1 to 5. See PermTypes.
+func (this *Acl) IsAllowedAction(role, res Entry, action PermTypes) bool {
+	var re, ro string
+
+	if role != nil {
+		ro = role.GetID()
+	}
+	if res != nil {
+		re = res.GetID()
+	}
+	//get the traversal path for role
+	rolePath := this.Rrole.TraverseRoot(ro)
+	//get the traversal path for resource
+	resPath := this.Rres.TraverseRoot(re)
+	permType := PermTypes(action)
+	//check role-resource
+	for _, aro := range rolePath {
+		for _, aco := range resPath {
+			expYes, expNo := this.Perms.IsAllowedAction(aro, aco, permType)
+			if expYes && !expNo {
+				return true
+			}
+			if !expYes && expNo {
+				return false
+			}
+			//else not specified, continue
+		}
+	}
+
+	return false
+}
+
+// IsDenied determines if the role is denied access to the resource.
+//
+// Both role and res can be specified as `nil` to check for the default access.
+//
+// Returns true if the role has access on the resource, and false otherwise.
+func (this *Acl) IsDenied(role, res Entry) bool {
+	var re, ro string
+
+	if role != nil {
+		ro = role.GetID()
+	}
+	if res != nil {
+		re = res.GetID()
+	}
+	//get the traversal path for role
+	rolePath := this.Rrole.TraverseRoot(ro)
+	//get the traversal path for resource
+	resPath := this.Rres.TraverseRoot(re)
+	//check role-resource
+	for _, aro := range rolePath {
+		for _, aco := range resPath {
+			expYes, expNo := this.Perms.IsDenied(aro, aco)
+			if expYes && !expNo {
+				return true
+			}
+			if !expYes && expNo {
+				return false
+			}
+			//else not specified, continue
+		}
+	}
+
+	return false
+}
+
+// IsDeniedAction performs the same function as IsDenied with the difference
+// that a type may be specified to check for a specific type of access.
+//
+// `action` is a number ranging from 1 to 5. See PermTypes.
+func (this *Acl) IsDeniedAction(role, res Entry, action PermTypes) bool {
+	var re, ro string
+
+	if role != nil {
+		ro = role.GetID()
+	}
+	if res != nil {
+		re = res.GetID()
+	}
+	//get the traversal path for role
+	rolePath := this.Rrole.TraverseRoot(ro)
+	//get the traversal path for resource
+	resPath := this.Rres.TraverseRoot(re)
+	permType := PermTypes(action)
+	//check role-resource
+	for _, aro := range rolePath {
+		for _, aco := range resPath {
+			expYes, expNo := this.Perms.IsDeniedAction(aro, aco, permType)
+			if expYes && !expNo {
+				return true
+			}
+			if !expYes && expNo {
+				return false
+			}
+			//else not specified, continue
+		}
+	}
+
+	return false
+}
+
+// MakeDefaultAllow makes the default permission allow, making it a blacklist.
+func (this *Acl) MakeDefaultAllow() {
+	this.Perms.MakeDefaultAllow()
+}
+
+// MakeDefaultDeny makes the default permission deny, making it a whitelist.
+func (this *Acl) MakeDefaultDeny() {
+	this.Perms.MakeDefaultDeny()
+}
+
+// Remove removes the permissions on the resource from the role.
+func (this *Acl) Remove(role, res Entry) error {
+	var ro, re string
+
+	if role != nil {
+		ro = role.GetID()
+	}
+	if res != nil {
+		re = res.GetID()
+	}
+	return this.Perms.Remove(ro, re)
+}
+
+// RemoveAction removes the specific permission on the resource from the role.
+func (this *Acl) RemoveAction(role, res Entry, action PermTypes) error {
+	var ro, re string
+
+	if role != nil {
+		ro = role.GetID()
+	}
+	if res != nil {
+		re = res.GetID()
+	}
+	permType := PermTypes(action)
+	return this.Perms.RemoveAction(ro, re, permType)
+}
+
+// RemoveResource removes a resource and its permissions.
+//
+// Any permissions applicable to the resource are also removed. If the
+// descendants are to be removed as well, the corresponding permissions are
+// removed too.
+//
+// If `desc` is true, all descendant resources of this resource are also
+// removed.
+func (this *Acl) RemoveResource(resource Entry, desc bool) error {
+	if resource == nil {
+		return ErrNilEntry
+	}
+	res, e := this.Rres.Remove(resource.GetID(), desc)
+	if e != nil {
+		return e
+	}
+	for _, r := range res {
+		this.Perms.RemoveByResource(r)
+	}
+	return nil
+}
+
+// RemoveRole removes a role and its permissions.
+//
+// Any permissions applicable to the role are also removed. If the descendants
+// are to be removed as well, the corresponding permissions are removed
+// too.
+//
+// If `desc` is true, all descendant roles of this role are also removed.
+func (this *Acl) RemoveRole(role Entry, desc bool) error {
+	if role == nil {
+		return ErrNilEntry
+	}
+	rol, e := this.Rrole.Remove(role.GetID(), desc)
+	if e != nil {
+		return e
+	}
+	for _, r := range rol {
+		this.Perms.RemoveByRole(r)
+	}
+	return nil
+}
+
+func (this *Acl) Visualize() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(this.Rrole.String())
+	buf.WriteString("\n")
+	buf.WriteString(this.Rres.String())
+	buf.WriteString("\n")
+	buf.WriteString(this.Perms.String())
+	buf.WriteString("\n")
+
+	return buf.String()
+}
+
+func (this *Acl) VisualizePermissions() string {
+	return this.Perms.String()
+}
+
+func (this *Acl) VisualizeResources(loader Entry) string {
+	return this.Rres.Display(loader, "", "")
+}
+
+func (this *Acl) VisualizeRoles(loader Entry) string {
+	return this.Rrole.Display(loader, "", "")
 }
 
 type Registry struct {
@@ -536,4 +964,24 @@ func NewPermission(asWhitelist bool) *Permission {
 		p.MakeDefaultAllow()
 	}
 	return &p
+}
+
+// NewRootEntry creates a simple Entry for the purpose of handling catch-all role/resource.
+func NewRootEntry() Entry {
+	return &rootEntry{}
+}
+
+type rootEntry struct {
+}
+
+func (this *rootEntry) GetID() string {
+	return "*"
+}
+
+func (this *rootEntry) GetEntryDesc() string {
+	return "ROOT"
+}
+
+func (this *rootEntry) RetrieveEntry(resID string) Entry {
+	return nil
 }
