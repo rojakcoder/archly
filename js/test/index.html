@@ -804,13 +804,44 @@ QUnit.test('removeByResourceRole()', function () {
 QUnit.module('Acl');
 
 QUnit.test('Default', function () {
-    var A = ACL;
+    var A = Archly.makeAcl(),
+        role1 = 'r1',
+        res1 = 'r1';
 
     equal(A.isAllowed(), false, 'Default false');
     A.makeDefaultAllow();
     equal(A.isAllowed(), true, 'Changed default to true');
     A.makeDefaultDeny();
     equal(A.isAllowed(), false, 'Change back to false');
+    
+    A.resources.add(res1);
+    A.roles.add(role1);
+    equal(A.isAllowed(role1, res1), false, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'ALL'), false, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'CREATE'), false, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'READ'), false, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'UPDATE'), false, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'DELETE'), false, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1), true, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'ALL'), true, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'CREATE'), true, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'READ'), true, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'UPDATE'), true, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'DELETE'), true, 'Default false with explicit role and resource');
+
+    A.makeDefaultAllow();
+    equal(A.isAllowed(role1, res1), true, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'ALL'), true, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'CREATE'), true, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'READ'), true, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'UPDATE'), true, 'Default false with explicit role and resource');
+    equal(A.isAllowed(role1, res1, 'DELETE'), true, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1), false, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'ALL'), false, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'CREATE'), false, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'READ'), false, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'UPDATE'), false, 'Default false with explicit role and resource');
+    equal(A.isDenied(role1, res1, 'DELETE'), false, 'Default false with explicit role and resource');
 });
 
 QUnit.test('Test Resource', function () {
@@ -1518,6 +1549,38 @@ QUnit.test('Test Export/Import', function () {
     ok(Object.keys(newRes).length < Object.keys(resources).length, 'Exported resources is unaffected');
     ok(Object.keys(newRoles).length < Object.keys(roles).length, 'Exported roles is unaffected');
     ok(Object.keys(newPerms).length < Object.keys(perms).length, 'Exported permissions is unaffected');
+});
+
+QUnit.module('Sample');
+
+QUnit.test('Sample', function () {
+    const acl = Archly.makeAcl();
+    let itDep = 'it-department';
+    let dev = 'developers';
+    let ops = 'operations';
+    let supp = 'support';
+    let mob = 'mobile';
+    let ios = 'ios';
+    let and = 'android';
+    let web = 'web';
+    let vue = 'vue';
+
+    equal(acl.resources.size(), 0, 'Start 0');
+    acl.addRole(itDep);
+    acl.addRole(dev, itDep);
+    acl.addRole(ops, itDep);
+    acl.addRole(supp, itDep);
+
+    acl.addRole(mob, dev);
+    acl.addRole(ios, mob);
+    acl.addRole(and, mob);
+    acl.addRole(web, dev);
+    acl.addRole(vue, web);
+    console.log(acl.visualize());
+    
+    acl.removeRole(mob, true);
+    acl.removeRole(web, false);
+    console.log(acl.visualize());
 });
 </script>
 </body>

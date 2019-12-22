@@ -1,4 +1,4 @@
-/*! Archly v0.6.0 | https://github.com/rojakcoder/archly/blob/master/LICENSE */
+/*! Archly v0.7.0 | https://github.com/rojakcoder/archly/blob/master/LICENSE */
 (function (win) {
     'strict';
 
@@ -9,8 +9,8 @@
         PERM_NOT_FOUND = "Permission '_perm_' not found on '_role_' for '_res_'";
 
     /**
-     * The map of role-resource tupe to permissions.
-     * The first level key is the tupe, the second level key is the action.
+     * The map of role-resource tuple to permissions.
+     * The first level key is the tuple, the second level key is the action.
      * Available actions are "ALL", "CREATE", "READ", "UPDATE", "DELETE".
      * @name Permission
      * @constructor
@@ -172,7 +172,7 @@
      * @memberof Permission
      */
     Permission.prototype.has = function (key) {
-        return !!this.perms[key];
+        return this.perms.hasOwnProperty(key);
     };
 
     /**
@@ -746,19 +746,29 @@
     };
 
     Registry.prototype.toString = function () {
-        var value, key,
+        var value, key, diff,
+            len = 0,
             output = [];
 
+        // Get the maximum length
+        for (key in this.registry) {
+            if (this.registry.hasOwnProperty(key)) {
+                if (len < key.length) {
+                    len = key.length;
+                }
+            }
+        }
         for (key in this.registry) {
             if (this.registry.hasOwnProperty(key)) {
                 value = this.registry[key];
                 output.push('\t');
-                output.push(key);
-                if (key.length >= 8) {
-                    output.push('\t - \t');
-                } else {
-                    output.push('\t\t - \t');
+                // Add the spaces in front
+                diff = len - key.length;
+                for (i = 0; i < diff; i++) {
+                    output.push(' ');
                 }
+                output.push(key);
+                output.push(' - ');
                 if (value === '') {
                     output.push('*');
                 } else {
