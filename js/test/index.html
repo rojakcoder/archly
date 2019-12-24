@@ -12,11 +12,11 @@
 <script src="lib/qunit.js"></script>
 <script src="/acl.js"></script>
 <script type="text/javascript">
-var ACL = Archly.makeAcl(),
+var ACL = Archly.newAcl(),
     ROLE_REGISTRY = ACL.roles,
     RESOURCE_REGISTRY = ACL.resources,
     PERMISSIONS = ACL.perms,
-    PERMISSION_TYPES = Archly.TYPES;
+    PERMISSION_TYPES = Archly.Types;
 
 QUnit.module('ResourceRegistry');
 
@@ -90,7 +90,7 @@ QUnit.test('Add/Remove Entry', function () {
 });
 
 QUnit.test('Add/Remove parents', function () {
-    var a     = Archly.makeAcl(),
+    var a     = Archly.newAcl(),
         r1    = 'RES-1',
         r2    = 'RES-2',
         r1a   = 'RES-1-A',
@@ -804,7 +804,7 @@ QUnit.test('removeByResourceRole()', function () {
 QUnit.module('Acl');
 
 QUnit.test('Default', function () {
-    var A = Archly.makeAcl(),
+    var A = Archly.newAcl(),
         role1 = 'r1',
         res1 = 'r1';
 
@@ -1554,7 +1554,7 @@ QUnit.test('Test Export/Import', function () {
 QUnit.module('Sample');
 
 QUnit.test('Sample', function () {
-    const acl = Archly.makeAcl();
+    const acl = Archly.newAcl();
     let itDep = 'it-department';
     let dev = 'developers';
     let ops = 'operations';

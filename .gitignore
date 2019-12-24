@@ -21,3 +21,6 @@ test-output
 /bin
 /target
 _site
+node_modules
+.commit.md
+dist/

@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2019-12-24
+
+[JS]
+
+### Changed
+
+- Refactored the source code for bundling into an npm package.
+- Fixed non-failing syntax errors in the JS library.
+
 ## [0.7.0] - 2019-12-22
 
 ### Changed

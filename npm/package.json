@@ -1,0 +1,33 @@
+{
+  "name": "archly",
+  "version": "0.8.0",
+  "description": "Archly is a library for creating a hierarchy-based access control list (ACL).",
+  "main": "dist/archly.common.min.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c scripts/rollup.config.js",
+    "package": "rollup -c scripts/rollup.package.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rojakcoder/archly.git"
+  },
+  "keywords": [
+    "acl",
+    "accesscontrol"
+  ],
+  "author": "Chua Chee How <chuacheehow@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rojakcoder/archly/issues"
+  },
+  "homepage": "https://github.com/rojakcoder/archly#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.0",
+    "rollup": "^1.27.13",
+    "rollup-plugin-minify-es": "^1.1.1"
+  }
+}

@@ -692,7 +692,7 @@
 
         childIds = findChildren(this.registry, entryId);
         childIds.forEach(function (childId) {
-            entry = loader.retrieveEntry(childId);
+            var entry = loader.retrieveEntry(childId);
             output.push(leading);
             output.push('- ');
             output.push(entry.getEntryDescription());
@@ -746,7 +746,7 @@
     };
 
     Registry.prototype.toString = function () {
-        var value, key, diff,
+        var value, key, diff, i,
             len = 0,
             output = [];
 
@@ -1099,8 +1099,8 @@
     };
 
     win.Archly = {
-        TYPES: Permission.Types,
-        makeAcl: function () {
+        Types: Permission.Types,
+        newAcl: function () {
             var roles = new Registry(),
                 resources = new Registry(),
                 permissions = new Permission();
