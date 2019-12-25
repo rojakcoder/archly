@@ -1,3 +1,5 @@
+const PERM_NOT_FOUND = "Permission '_perm_' not found on '_role_' for '_res_'.";
+
 const Types = {
   ALL: 'ALL',
   CREATE: 'CREATE',

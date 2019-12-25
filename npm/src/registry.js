@@ -1,3 +1,6 @@
+const DUPLICATE_ENTRIES = "Entry '_entry_' is already in the registry.";
+const ENTRY_NOT_FOUND = "Entry '_entry_' is not in registry.";
+
 /**
  * The registry for resources and roles.
  * @constructor

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+[JS]
+
+### Added
+
+- Added the Jest test suite for use with the refactored source code.
+
 ## [0.8.0] - 2019-12-24
 
 [JS]
