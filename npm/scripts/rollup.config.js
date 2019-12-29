@@ -1,7 +1,7 @@
 import commonjs from '@rollup/plugin-commonjs';
 
 export default {
-  input: './src/main.js',
+  input: './src/archly.js',
   output: [
     {
       file: 'dist/archly.common.js',

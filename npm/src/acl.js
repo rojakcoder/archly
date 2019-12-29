@@ -1,4 +1,4 @@
-const perm = require('./permission');
+const { Types } = require('./permission');
 
 /**
  * The Acl class for managing permissions.
@@ -6,7 +6,7 @@ const perm = require('./permission');
  * @constructor
  */
 function Acl(perms, resourceReg, roleReg) {
-  this.perms = perms;
+  this.permissions = perms;
   this.resources = resourceReg;
   this.roles = roleReg;
 }
@@ -31,7 +31,7 @@ Acl.prototype.allowAllResource = function (role) {
   } catch (e) { //duplicate entry
     //do nothing
   }
-  this.perms.allow(roleValue, '*');
+  this.permissions.allow(roleValue, '*');
 };
 
 Acl.prototype.allowAllRole = function (resource) {
@@ -42,7 +42,7 @@ Acl.prototype.allowAllRole = function (resource) {
   } catch (e) { //duplicate entry
     //do nothing
   }
-  this.perms.allow('*', resValue);
+  this.permissions.allow('*', resValue);
 }
 
 Acl.prototype.allow = function (role, resource, action) {
@@ -59,11 +59,11 @@ Acl.prototype.allow = function (role, resource, action) {
   } catch (e) {
     //do nothing
   }
-  this.perms.allow(roleValue, resValue, action);
+  this.permissions.allow(roleValue, resValue, action);
 };
 
 Acl.prototype.clear = function () {
-  this.perms.clear();
+  this.permissions.clear();
   this.resources.clear();
   this.roles.clear();
 };
@@ -76,7 +76,7 @@ Acl.prototype.denyAllResource = function (role) {
   } catch (e) {
     //do nothing
   }
-  this.perms.deny(roleValue, '*');
+  this.permissions.deny(roleValue, '*');
 };
 
 Acl.prototype.denyAllRole = function (resource) {
@@ -87,7 +87,7 @@ Acl.prototype.denyAllRole = function (resource) {
   } catch (e) {
     //do nothing
   }
-  this.perms.deny('*', resValue);
+  this.permissions.deny('*', resValue);
 };
 
 Acl.prototype.deny = function (role, resource, action) {
@@ -104,11 +104,11 @@ Acl.prototype.deny = function (role, resource, action) {
   } catch (e) {
     //do nothing
   }
-  this.perms.deny(roleValue, resValue, action);
+  this.permissions.deny(roleValue, resValue, action);
 };
 
 Acl.prototype.exportPermissions = function () {
-  return this.perms.export();
+  return this.permissions.export();
 };
 
 Acl.prototype.exportResources = function () {
@@ -120,10 +120,10 @@ Acl.prototype.exportRoles = function () {
 };
 
 Acl.prototype.importPermissions = function (permissions) {
-  if (this.perms.size() !== 0) {
+  if (this.permissions.size() !== 0) {
     throw new Error(NON_EMPTY.replace(/_reg_/, 'permissions'));
   }
-  this.perms.importMap(permissions);
+  this.permissions.importMap(permissions);
 };
 
 Acl.prototype.importResources = function (resources) {
@@ -148,7 +148,7 @@ Acl.prototype.isAllowed = function (role, resource, action) {
       rolePath = this.roles.traverseRoot(roleValue);
 
   if (!action) {
-    action = perm.Types.ALL;
+    action = Types.ALL;
   }
 
   //check role-resource
@@ -158,10 +158,10 @@ Acl.prototype.isAllowed = function (role, resource, action) {
       for (c in resPath) {
         if (resPath.hasOwnProperty(c)) {
           aco = resPath[c];
-          if (action === perm.Types.ALL) {
-            grant = this.perms.isAllowedAll(aro, aco);
+          if (action === Types.ALL) {
+            grant = this.permissions.isAllowedAll(aro, aco);
           } else {
-            grant = this.perms.isAllowed(aro, aco, action);
+            grant = this.permissions.isAllowed(aro, aco, action);
           }
 
           if (grant !== null) {
@@ -183,7 +183,7 @@ Acl.prototype.isDenied = function (role, resource, action) {
       rolePath = this.roles.traverseRoot(roleValue);
 
   if (!action) {
-    action = perm.Types.ALL;
+    action = Types.ALL;
   }
 
   //check role-resource
@@ -193,10 +193,10 @@ Acl.prototype.isDenied = function (role, resource, action) {
       for (c in resPath) {
         if (resPath.hasOwnProperty(c)) {
           aco = resPath[c];
-          if (action === perm.Types.ALL) {
-            grant = this.perms.isDeniedAll(aro, aco);
+          if (action === Types.ALL) {
+            grant = this.permissions.isDeniedAll(aro, aco);
           } else {
-            grant = this.perms.isDenied(aro, aco, action);
+            grant = this.permissions.isDenied(aro, aco, action);
           }
 
           if (grant !== null) {
@@ -211,15 +211,15 @@ Acl.prototype.isDenied = function (role, resource, action) {
 };
 
 Acl.prototype.makeDefaultAllow = function () {
-  this.perms.makeDefaultAllow();
+  this.permissions.makeDefaultAllow();
 };
 
 Acl.prototype.makeDefaultDeny = function () {
-  this.perms.makeDefaultDeny();
+  this.permissions.makeDefaultDeny();
 };
 
 Acl.prototype.remove = function (role, resource, action) {
-  this.perms.remove(getValue(role), getValue(resource), action);
+  this.permissions.remove(getValue(role), getValue(resource), action);
 };
 
 Acl.prototype.removeResource = function (resource, removeDescendants) {
@@ -231,7 +231,7 @@ Acl.prototype.removeResource = function (resource, removeDescendants) {
   }
   resources = this.resources.remove(resId, removeDescendants);
   for (i = 0; i < resources.length; i++) {
-    this.perms.removeByResource(resources[i]);
+    this.permissions.removeByResource(resources[i]);
   }
 };
 
@@ -244,7 +244,7 @@ Acl.prototype.removeRole = function (role, removeDescendants) {
   }
   roles = this.roles.remove(roleId, removeDescendants);
   for (i = 0; i < roles.length; i++) {
-    this.perms.removeByRole(roles[i]);
+    this.permissions.removeByRole(roles[i]);
   }
 };
 
@@ -255,14 +255,14 @@ Acl.prototype.visualize = function () {
   output.push('\n');
   output.push(this.resources.toString());
   output.push('\n');
-  output.push(this.perms.toString());
+  output.push(this.permissions.toString());
   output.push('\n');
 
   return output.join('');
 };
 
 Acl.prototype.visualizePermissions = function () {
-  return this.perms.toString();
+  return this.permissions.toString();
 };
 
 Acl.prototype.visualizeResources = function (loader) {
@@ -277,14 +277,11 @@ function getValue(val) {
   if (!val) {
     return null;
   }
-  if (typeof val === 'string') {
-    return val;
-  }
   if (typeof val.getId === 'function' &&
-      typeof val.getId() === 'string') {
+  typeof val.getId() === 'string') {
     return val.getId();
   }
-  throw new Error('Invalid entry type - expected a string or object with the getId() method.');
+  return val;
 }
 
 module.exports = Acl;

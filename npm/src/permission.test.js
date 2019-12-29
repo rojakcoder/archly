@@ -340,13 +340,14 @@ test('removeByResourceRole()', function () {
       P = new perm.Permission();
 
   expect(P.size()).toBe(1); // *::*
-
+  
   //create mappings for each key pair
   for (let i = 0; i < resources.length; i++) {
-      for (let j = 0; j < roles.length; j++) {
-          P.allow(roles[j], resources[i]);
-      }
+    for (let j = 0; j < roles.length; j++) {
+      P.allow(roles[j], resources[i]);
+    }
   }
+  expect(P.toString()).toBeTruthy();
   // 1 + 4x4 mappings
   expect(P.size()).toBe(17);
 

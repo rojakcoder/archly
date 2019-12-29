@@ -2,11 +2,17 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2019-12-27
+
 [JS]
 
 ### Added
 
 - Added the Jest test suite for use with the refactored source code.
+
+### Changed
+
+- Refactored the Qunit tests to Jest tests for 100% coverage.
 
 ## [0.8.0] - 2019-12-24
 

@@ -1,29 +1,35 @@
 import commonjs from '@rollup/plugin-commonjs';
 import minify from 'rollup-plugin-minify-es';
 
+const version = '0.8.1';
+
 export default {
-  input: './src/main.js',
+  input: './src/archly.js',
   output: [
     {
       file: 'dist/archly.common.min.js',
       format: 'cjs',
-      exports: 'named'
+      exports: 'named',
     },
     {
       file: 'dist/archly.esm.min.js',
       format: 'esm',
-      exports: 'named'
+      exports: 'named',
     },
     {
       file: 'dist/archly.browser.min.js',
       name: 'Archly',
       format: 'iife',
-      exports: 'named'
+      exports: 'named',
     }
   ],
   plugins: [
     commonjs(),
-    minify()
+    minify({
+      output: {
+        preamble: '/* Archly v' + version + ' */',
+      },
+    }),
   ]
 }
 

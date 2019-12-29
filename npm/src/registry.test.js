@@ -1,5 +1,18 @@
 const Registry = require('./registry');
 
+var Role = function (id) {
+  this.id = id;
+};
+Role.prototype.getEntryDescription = function () {
+  return this.id;
+};
+Role.prototype.getId = function () {
+  return this.id;
+};
+Role.prototype.retrieveEntry = function (id) {
+  return new Role(id);
+};
+
 test('Add/Remove Entry', () => {
   var reg = new Registry(),
       r1 = 'RES-1',
@@ -143,7 +156,7 @@ test("Traversal", () => {
   expect(path.length).toBe(4);
 
   //test the output
-  // console.info(reg.display(new Role(r1)));
-  console.info(reg.toString());
-  //console.info(REGISTRY.display(path));
+  expect(reg.display(new Role(r1))).toBeTruthy();
+  expect(reg.toString()).toBeTruthy();
+  expect(Registry.display(path)).toBeTruthy();
 });
