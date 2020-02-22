@@ -86,15 +86,15 @@ test('Test Resource', function () {
   acl.addResource(res1);
   expect(() => {
     acl.addResource(res1)
-  }).toThrow(Error);
+  }).toThrow("Entry 'ACO-1' is already in the registry");
 
   acl.addResource(res1a, res1);
   expect(() => {
     acl.addResource(res1a);
-  }).toThrow(Error);
+  }).toThrow("Entry 'ACO-1-A' is already in the registry");
   expect(() => {
     acl.addResource(res1a, res1);
-  }).toThrow(Error);
+  }).toThrow("Entry 'ACO-1-A' is already in the registry");
 });
 
 test('Test Role', function () {
@@ -105,14 +105,14 @@ test('Test Role', function () {
   acl.addRole(rol1);
   expect(() => {
     acl.addRole(rol1);
-  }).toThrow(Error);
+  }).toThrow("Entry 'ARO-1' is already in the registry");
   acl.addRole(rol1a, rol1);
   expect(() => {
     acl.addRole(rol1a);
-  }).toThrow(Error);
+  }).toThrow("Entry 'ARO-1-A' is already in the registry");
   expect(() => {
     acl.addRole(rol1a, rol1);
-  }).toThrow(Error);
+  }).toThrow("Entry 'ARO-1-A' is already in the registry");
 });
 
 test('Test Allow', function () {
@@ -618,11 +618,11 @@ test('Test Remove Resource/Role', function () {
   //test coverage
   expect(() => {
     A.removeResource(null, false);
-  }).toThrow(Error);
+  }).toThrow("Cannot remove null resource");
 
   expect(() => {
     A.removeRole(null, false);
-  }).toThrow(Error);
+  }).toThrow("Cannot remove null role");
 });
 
 test('Test Export/Import', function () {
@@ -673,13 +673,13 @@ test('Test Export/Import', function () {
   //test import
   expect(() => {
     A.importResources(newRes);
-  }).toThrow(Error); // Resources are non-empty.
+  }).toThrow('resources registry is not empty'); // Resources are non-empty.
   expect(() => {
     A.importRoles(newRoles);
-  }).toThrow(Error); // Roles are non-empty.
+  }).toThrow('roles registry is not empty'); // Roles are non-empty.
   expect(() => {
     A.importPermissions(newPerms);
-  }).toThrow(Error); // Permissions are non-empty.
+  }).toThrow('permissions registry is not empty'); // Permissions are non-empty.
 
   A.clear();
   A.importResources(newRes);

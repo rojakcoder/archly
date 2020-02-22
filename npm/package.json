@@ -1,6 +1,6 @@
 {
   "name": "archly",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Archly is a library for creating a hierarchy-based access control list (ACL).",
   "main": "dist/archly.common.min.js",
   "unpkg": "dist/archly.browser.min.js",

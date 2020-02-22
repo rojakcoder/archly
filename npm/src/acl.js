@@ -1,5 +1,7 @@
 const { Types } = require('./permission');
 
+const NON_EMPTY = "_reg_ registry is not empty";
+
 /**
  * The Acl class for managing permissions.
  * @name Acl
